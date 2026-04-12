@@ -618,10 +618,21 @@ function renderHeatmap() {
 
 // ─── WEB DASHBOARD ──────────────────────────────────────────────────────────
 function openWebDashboard() {
-  // In the Figma plugin, open the web dashboard in a new browser tab
   const email = state.user ? state.user.email : "";
-  const url   = "http://localhost:3034/dashboard.html" + (email ? `#${encodeURIComponent(email)}` : "");
-  window.open(url, "_blank");
+  const BASE  = "https://sanchit-bajaj.github.io/Design-Commits/dashboard.html";
+
+  if (!email) { window.open(BASE, "_blank"); return; }
+
+  // Encode this account's localStorage data into the URL so the dashboard
+  // (different origin from Figma plugin) can import it on arrival.
+  try {
+    const raw     = localStorage.getItem(`dc_v1_${email}`);
+    const data    = raw ? JSON.parse(raw) : {};
+    const payload = btoa(unescape(encodeURIComponent(JSON.stringify({ email, data }))));
+    window.open(`${BASE}#import:${payload}`, "_blank");
+  } catch(e) {
+    window.open(`${BASE}#${encodeURIComponent(email)}`, "_blank");
+  }
 }
 
 // ─── LEADERBOARD ─────────────────────────────────────────────────────────────

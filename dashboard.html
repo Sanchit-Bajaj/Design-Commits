@@ -1417,6 +1417,29 @@ window.addEventListener("DOMContentLoaded", () => {
 
   const hash = window.location.hash.slice(1);
   if (hash) {
+    // #import:BASE64 → plugin data handoff
+    if (hash.startsWith("import:")) {
+      try {
+        const json    = decodeURIComponent(escape(atob(hash.slice(7))));
+        const { email, data } = JSON.parse(json);
+        if (email && data) {
+          // Merge incoming data into dashboard's own localStorage
+          const key      = `dc_v1_${email}`;
+          const existing = JSON.parse(localStorage.getItem(key) || "{}");
+          // Deep merge: for each date, merge figma user entries
+          Object.entries(data).forEach(([date, users]) => {
+            if (!existing[date]) existing[date] = {};
+            Object.assign(existing[date], users);
+          });
+          localStorage.setItem(key, JSON.stringify(existing));
+          // Clean up hash so it doesn't re-import on refresh
+          history.replaceState(null, "", window.location.pathname);
+        }
+        if (valid(email)) { loadDashboard(email); }
+      } catch(e) { console.warn("Import failed", e); }
+      return;
+    }
+
     // #public:email → public view
     if (hash.startsWith("public:")) {
       const email = decodeURIComponent(hash.slice(7));
