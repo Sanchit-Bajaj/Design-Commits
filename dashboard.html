@@ -150,6 +150,29 @@ html, body {
 .tb-share-btn:hover { border-color: var(--abr); color: var(--ac); }
 .tb-share-btn.copied { border-color: var(--abr); color: var(--ac); }
 
+/* Sync status bar */
+.sync-bar {
+  background: var(--s2); border-bottom: 1px solid var(--b1);
+  padding: 7px 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 11px; color: var(--i3);
+}
+.sync-bar.hidden { display: none; }
+.sync-info { display: flex; align-items: center; gap: 6px; }
+.sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--i3); flex-shrink: 0; }
+.sync-dot.fresh { background: var(--ac); box-shadow: 0 0 6px rgba(170,255,0,.5); }
+.sync-dot.stale { background: #FFB800; }
+.sync-btn {
+  background: none; border: 1px solid var(--b1); border-radius: 6px;
+  padding: 3px 10px; font-size: 10px; font-weight: 600; color: var(--i3);
+  font-family: var(--fn); cursor: pointer; transition: border-color .12s, color .12s;
+  display: flex; align-items: center; gap: 4px;
+}
+.sync-btn:hover { border-color: var(--abr); color: var(--ac); }
+.sync-btn svg { animation: none; }
+.sync-btn.syncing svg { animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
 /* Public view banner */
 .public-banner {
   background: var(--abg); border-bottom: 1px solid var(--abr);
@@ -634,6 +657,21 @@ html, body {
     </div>
   </div>
 
+  <!-- Sync status bar -->
+  <div class="sync-bar hidden" id="sync-bar">
+    <div class="sync-info">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span id="sync-msg">Never synced — open this dashboard from the Figma plugin to load your data</span>
+    </div>
+    <button class="sync-btn" id="sync-btn" onclick="refreshData()" title="Reload data from local storage">
+      <svg id="sync-icon" width="10" height="10" viewBox="0 0 10 10" fill="none">
+        <path d="M8.5 2A4 4 0 102 7.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        <path d="M8.5 2V4.5H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Refresh
+    </button>
+  </div>
+
   <!-- Grid -->
   <div class="dash-main">
 
@@ -883,6 +921,40 @@ function signOut() {
   err.classList.remove("show");
 }
 
+// ─── SYNC STATUS ──────────────────────────────────────────────────────────────
+function updateSyncBar(email) {
+  const bar = document.getElementById("sync-bar");
+  const dot = document.getElementById("sync-dot");
+  const msg = document.getElementById("sync-msg");
+  bar.classList.remove("hidden");
+
+  const ts = localStorage.getItem(`dc_sync_ts_${email}`);
+  if (!ts) {
+    dot.className = "sync-dot stale";
+    msg.innerHTML = `Never synced — <strong>open from the Figma plugin</strong> to load your data`;
+    return;
+  }
+
+  const diff  = Date.now() - parseInt(ts);
+  const mins  = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days  = Math.floor(diff / 86400000);
+  const ago   = days > 0 ? `${days}d ago` : hours > 0 ? `${hours}h ago` : mins > 0 ? `${mins}m ago` : "just now";
+  const fresh = diff < 3600000; // < 1 hour = fresh
+
+  dot.className = `sync-dot ${fresh ? "fresh" : "stale"}`;
+  msg.textContent = `Last synced ${ago} from Figma plugin`;
+}
+
+function refreshData() {
+  const btn  = document.getElementById("sync-btn");
+  btn.classList.add("syncing");
+  setTimeout(() => {
+    btn.classList.remove("syncing");
+    loadDashboard(currentEmail);
+  }, 600);
+}
+
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 function loadDashboard(email) {
   currentEmail = email;
@@ -894,6 +966,8 @@ function loadDashboard(email) {
     document.getElementById("share-public-btn").style.display = "flex";
     document.getElementById("embed-btn").style.display        = "flex";
   }
+
+  updateSyncBar(email);
 
   const { heatmap, fileMap, accountMap } = aggregateStore(email);
   const today = todayStr();
@@ -1432,6 +1506,8 @@ window.addEventListener("DOMContentLoaded", () => {
             Object.assign(existing[date], users);
           });
           localStorage.setItem(key, JSON.stringify(existing));
+          // Save sync timestamp
+          localStorage.setItem(`dc_sync_ts_${email}`, Date.now().toString());
           // Clean up hash so it doesn't re-import on refresh
           history.replaceState(null, "", window.location.pathname);
         }
