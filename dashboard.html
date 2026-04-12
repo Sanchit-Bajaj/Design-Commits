@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design Commits — Dashboard</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:   #0B1A0D;
+  --sf:   #0F2012;
+  --s2:   #152918;
+  --s3:   #1D3320;
+  --b1:   rgba(255,255,255,.06);
+  --b2:   rgba(255,255,255,.12);
+  --ink:  #FFFFFF;
+  --i2:   rgba(255,255,255,.55);
+  --i3:   rgba(255,255,255,.30);
+  --ac:   #AAFF00;
+  --ac-d: #0D2200;
+  --abg:  rgba(170,255,0,.10);
+  --abr:  rgba(170,255,0,.28);
+  --gn:   #AAFF00;
+  --rd:   #FF5050;
+  --glow: 0 0 40px rgba(170,255,0,.12);
+  --r:    12px;
+  --rs:   8px;
+  --fn:   -apple-system, "Inter", sans-serif;
+  --mn:   "DM Mono", "SF Mono", ui-monospace, monospace;
+}
+
+html, body {
+  font-family: var(--fn);
+  font-size: 14px;
+  line-height: 1.5;
+  background: var(--bg);
+  color: var(--ink);
+  min-height: 100vh;
+}
+
+/* ─── SCREENS ─────────────────────────────────────────────────────────────── */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ─── AUTH ────────────────────────────────────────────────────────────────── */
+#screen-auth {
+  min-height: 100vh;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+#screen-auth.active { display: flex; }
+
+.auth-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--sf);
+  border: 1px solid var(--b1);
+  border-radius: 20px;
+  padding: 40px 32px 32px;
+  box-shadow: var(--glow);
+}
+.auth-logo {
+  width: 52px; height: 52px;
+  background: var(--abg); border: 1px solid var(--abr);
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; margin: 0 auto 20px;
+  box-shadow: 0 0 28px rgba(170,255,0,.18);
+}
+.auth-title { font-size: 24px; font-weight: 700; text-align: center; letter-spacing: -0.04em; }
+.auth-sub   { font-size: 13px; color: var(--i3); text-align: center; margin-top: 6px; }
+.auth-form  { margin-top: 28px; display: flex; flex-direction: column; gap: 12px; }
+.auth-label {
+  font-size: 11px; font-weight: 600; color: var(--i3);
+  text-transform: uppercase; letter-spacing: 0.08em; display: block; margin-bottom: 5px;
+}
+.auth-input {
+  width: 100%; font-family: var(--fn); font-size: 14px; color: var(--ink);
+  background: var(--s2); border: 1px solid var(--b1); border-radius: var(--rs);
+  padding: 12px 14px; outline: none; transition: border-color .15s, box-shadow .15s;
+}
+.auth-input:focus { border-color: var(--abr); box-shadow: 0 0 0 3px rgba(170,255,0,.08); }
+.auth-input::placeholder { color: var(--i3); }
+.auth-btn {
+  width: 100%; padding: 13px;
+  background: var(--ac); color: #0B1A0D;
+  border: none; border-radius: var(--rs);
+  font-size: 14px; font-weight: 700; font-family: var(--fn);
+  cursor: pointer; transition: opacity .15s, box-shadow .15s;
+  box-shadow: 0 0 24px rgba(170,255,0,.3);
+}
+.auth-btn:hover    { opacity: .9; box-shadow: 0 0 32px rgba(170,255,0,.45); }
+.auth-btn:disabled { opacity: .3; cursor: default; box-shadow: none; }
+.auth-note { font-size: 11px; color: var(--i3); text-align: center; margin-top: 8px; }
+.auth-error {
+  font-size: 12px; color: var(--rd); text-align: center;
+  background: rgba(255,80,80,.08); border: 1px solid rgba(255,80,80,.18);
+  border-radius: var(--rs); padding: 10px 14px;
+  display: none;
+}
+.auth-error.show { display: block; }
+
+/* ─── DASHBOARD ────────────────────────────────────────────────────────────── */
+#screen-dash { display: none; flex-direction: column; min-height: 100vh; }
+#screen-dash.active { display: flex; }
+
+/* Topbar */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--sf); border-bottom: 1px solid var(--b1);
+  padding: 0 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 56px; flex-shrink: 0;
+}
+.tb-left  { display: flex; align-items: center; gap: 12px; }
+.tb-logo  { font-size: 18px; }
+.tb-title { font-size: 15px; font-weight: 700; color: var(--ink); letter-spacing: -0.02em; }
+.tb-right { display: flex; align-items: center; gap: 10px; }
+
+.tb-user {
+  display: flex; align-items: center; gap: 8px;
+}
+.tb-av {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--ac-d); border: 1.5px solid var(--abr); color: var(--ac);
+  font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.tb-email { font-size: 12px; color: var(--i2); }
+
+.chip {
+  background: var(--abg); border: 1px solid var(--abr); border-radius: 20px;
+  padding: 4px 12px; font-size: 11px; font-weight: 700; color: var(--ac);
+}
+.tb-signout {
+  background: none; border: 1px solid var(--b1); border-radius: var(--rs);
+  padding: 5px 12px; font-size: 11px; color: var(--i3); font-family: var(--fn);
+  cursor: pointer; transition: border-color .12s, color .12s;
+}
+.tb-signout:hover { border-color: var(--b2); color: var(--ink); }
+.tb-share-btn {
+  background: none; border: 1px solid var(--b1); border-radius: var(--rs);
+  padding: 5px 12px; font-size: 11px; color: var(--i3); font-family: var(--fn);
+  cursor: pointer; transition: border-color .12s, color .12s; display: flex; align-items: center; gap: 5px;
+}
+.tb-share-btn:hover { border-color: var(--abr); color: var(--ac); }
+.tb-share-btn.copied { border-color: var(--abr); color: var(--ac); }
+
+/* Public view banner */
+.public-banner {
+  background: var(--abg); border-bottom: 1px solid var(--abr);
+  padding: 7px 24px; font-size: 11px; color: var(--ac);
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  display: none;
+}
+.public-banner.show { display: flex; }
+.public-banner-lbl { display: flex; align-items: center; gap: 6px; }
+.public-embed-btn {
+  background: none; border: 1px solid var(--abr); border-radius: var(--rs);
+  padding: 4px 12px; font-size: 10px; font-weight: 600; color: var(--ac);
+  font-family: var(--fn); cursor: pointer; transition: background .12s;
+}
+.public-embed-btn:hover { background: rgba(170,255,0,.1); }
+
+/* Main layout */
+.dash-main {
+  flex: 1;
+  padding: 24px;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "heatmap"
+    "stats"
+    "score";
+}
+
+@media (min-width: 900px) {
+  .dash-main {
+    grid-template-columns: 1fr 380px;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "heatmap  stats"
+      "score    score";
+    align-items: stretch;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 28px 32px;
+  }
+}
+
+/* ─── CARDS ───────────────────────────────────────────────────────────────── */
+.card {
+  background: var(--sf);
+  border: 1px solid var(--b1);
+  border-radius: var(--r);
+  padding: 20px;
+}
+.card-label {
+  font-size: 10px; font-weight: 700; color: var(--i3);
+  text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 14px;
+}
+
+/* ─── HEATMAP ─────────────────────────────────────────────────────────────── */
+.heatmap-area { grid-area: heatmap; }
+.hm-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.hm-range { font-size: 11px; color: var(--i3); }
+.hm-wrap { overflow-x: auto; padding-bottom: 4px; }
+.hm-wrap::-webkit-scrollbar { height: 3px; }
+.hm-wrap::-webkit-scrollbar-thumb { background: var(--s3); border-radius: 2px; }
+/* Month groups row */
+.hm-months-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.hm-month-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.hm-month-lbl {
+  font-size: 9px; color: var(--i3); font-weight: 600;
+  white-space: nowrap; padding-left: 1px;
+}
+.hm-month-weeks {
+  display: grid;
+  grid-template-rows: repeat(7, 12px);
+  grid-auto-flow: column;
+  gap: 3px;
+}
+.hm-cell { width: 12px; height: 12px; border-radius: 2px; background: var(--s3); }
+.hm-cell[data-l="1"] { background: rgba(170,255,0,.20); }
+.hm-cell[data-l="2"] { background: rgba(170,255,0,.42); }
+.hm-cell[data-l="3"] { background: rgba(170,255,0,.68); }
+.hm-cell[data-l="4"] { background: var(--ac); box-shadow: 0 0 5px rgba(170,255,0,.5); }
+.hm-cell.future  { background: rgba(255,255,255,.05); border: none; }
+.hm-cell.empty   { background: transparent; border: 1px solid rgba(255,255,255,.07); }
+.hm-cell.spacer  { background: transparent; border: none; pointer-events: none; }
+
+/* Custom range dropdown */
+.hm-range-btn {
+  position: relative;
+  display: flex; align-items: center; gap: 4px;
+  background: var(--s2); border: 1px solid var(--b1); border-radius: var(--rs);
+  color: var(--i2); font-size: 10px; font-family: var(--fn);
+  padding: 4px 8px 4px 9px; cursor: pointer; outline: none;
+  transition: border-color .12s, color .12s; user-select: none;
+}
+.hm-range-btn:hover { border-color: var(--abr); color: var(--ink); }
+.hm-range-btn svg { flex-shrink: 0; transition: transform .15s; }
+.hm-range-btn.open svg { transform: rotate(180deg); }
+.hm-range-drop {
+  position: absolute; top: calc(100% + 4px); right: 0;
+  background: var(--sf); border: 1px solid var(--b2);
+  border-radius: var(--rs); padding: 4px; min-width: 110px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.45); z-index: 20;
+  display: none; flex-direction: column; gap: 1px;
+}
+.hm-range-drop.open { display: flex; }
+.hm-range-opt {
+  padding: 7px 10px; border-radius: 5px; font-size: 11px;
+  color: var(--i2); cursor: pointer; transition: background .1s, color .1s;
+  white-space: nowrap;
+}
+.hm-range-opt:hover   { background: var(--b1); color: var(--ink); }
+.hm-range-opt.active  { color: var(--ac); font-weight: 600; }
+
+.hm-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+.hm-legend { display: flex; align-items: center; gap: 5px; }
+.hm-legend span { font-size: 9px; color: var(--i3); }
+.hl-cell { width: 10px; height: 10px; border-radius: 2px; }
+.hl-cell.l0 { background: var(--s3); }
+.hl-cell.l1 { background: rgba(170,255,0,.20); }
+.hl-cell.l2 { background: rgba(170,255,0,.42); }
+.hl-cell.l3 { background: rgba(170,255,0,.68); }
+.hl-cell.l4 { background: var(--ac); }
+.hm-embed-link {
+  font-size: 9px; color: var(--i3); text-decoration: none;
+  display: flex; align-items: center; gap: 3px;
+  padding: 3px 7px; border: 1px solid rgba(255,255,255,.07); border-radius: 4px;
+  transition: color .12s, border-color .12s;
+}
+.hm-embed-link:hover { color: var(--ac); border-color: var(--abr); }
+
+/* ─── SCORE BANNER ────────────────────────────────────────────────────────── */
+.score-area {
+  grid-area: score;
+  position: relative; overflow: hidden;
+}
+.score-area::before {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 10% 50%, rgba(170,255,0,.08) 0%, transparent 60%);
+  pointer-events: none;
+}
+/* Horizontal banner layout */
+.score-banner {
+  display: flex; align-items: center; gap: 0; flex-wrap: wrap;
+}
+.score-main {
+  display: flex; align-items: baseline; gap: 10px; padding-right: 24px;
+  border-right: 1px solid var(--b1); margin-right: 24px; flex-shrink: 0;
+}
+.score-num {
+  font-family: var(--mn); font-size: 52px; font-weight: 700;
+  color: var(--ink); letter-spacing: -0.04em; line-height: 1;
+}
+.score-main-meta { display: flex; flex-direction: column; gap: 2px; }
+.score-sub  { font-size: 11px; color: var(--i3); }
+.live-row {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 10px; color: var(--gn); margin-top: 3px;
+}
+.live-dot {
+  width: 5px; height: 5px; border-radius: 50%; background: var(--gn);
+  animation: livepulse 1.5s infinite;
+  box-shadow: 0 0 5px rgba(170,255,0,.7);
+}
+@keyframes livepulse { 0%,100%{opacity:.5} 50%{opacity:1} }
+
+/* Added / Removed pills */
+.score-pills {
+  display: flex; align-items: center; gap: 8px;
+  padding-right: 24px; border-right: 1px solid var(--b1); margin-right: 24px; flex-shrink: 0;
+}
+.score-pill { text-align: center; }
+.sr-val  { font-family: var(--mn); font-size: 22px; font-weight: 700; line-height: 1; margin-bottom: 2px; }
+.sr-lbl  { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--i3); }
+.score-pill.cr .sr-val { color: var(--gn); }
+.score-pill.cr .sr-lbl { color: var(--gn); }
+.score-pill.dl .sr-val { color: var(--rd); }
+.score-pill.dl .sr-lbl { color: var(--rd); }
+.pill-div { width: 1px; height: 32px; background: var(--b1); }
+
+/* Account breakdown inside score banner */
+.acc-bd { flex: 1; min-width: 180px; }
+.acc-bd-lbl { font-size: 9px; font-weight: 700; color: var(--i3); text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 6px; }
+.acc-row { display: flex; align-items: center; gap: 8px; padding: 2px 0; }
+.acc-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--i3); flex-shrink: 0; }
+.acc-dot.current { background: var(--ac); box-shadow: 0 0 6px rgba(170,255,0,.7); }
+.acc-name { font-size: 12px; color: var(--i2); flex: 1; }
+.acc-name .you-tag { font-size: 9px; color: var(--ac); background: var(--abg); padding: 1px 6px; border-radius: 8px; margin-left: 5px; }
+.acc-total { font-family: var(--mn); font-size: 12px; font-weight: 700; color: var(--ink); }
+
+/* ─── STATS ───────────────────────────────────────────────────────────────── */
+.stats-area { grid-area: stats; }
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 0;
+}
+@media (min-width: 900px) {
+  .stats-area .card-label { margin-bottom: 12px; }
+}
+.stat-cell {
+  background: var(--s2); border-radius: var(--rs); padding: 14px 12px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.stat-val { font-family: var(--mn); font-size: 26px; font-weight: 700; color: var(--ink); letter-spacing: -0.03em; line-height: 1; }
+.stat-val span { font-size: 13px; font-weight: 500; color: var(--i3); }
+.stat-lbl { font-size: 10px; color: var(--i3); }
+
+/* ─── RECENT DAYS ─────────────────────────────────────────────────────────── */
+.recent-area { grid-area: recent; }
+
+/* On mobile, stats and recent stack below score in single column — always visible */
+
+.recent-list { display: flex; flex-direction: column; gap: 6px; margin-top: 0; }
+.day-item {
+  background: var(--s2); border: 1px solid var(--b1); border-radius: var(--rs);
+  padding: 12px 14px;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+  transition: border-color .15s;
+}
+.day-item:hover { border-color: var(--abr); }
+.day-left  { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.day-date  { font-size: 13px; font-weight: 600; color: var(--ink); }
+.day-files { font-size: 11px; color: var(--i3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.day-files .extra { color: var(--ac); font-weight: 600; }
+.day-accs  { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+.day-acc-tag {
+  font-size: 9px; color: var(--i3);
+  background: var(--s3); border: 1px solid var(--b1);
+  padding: 1px 7px; border-radius: 8px;
+}
+.day-score {
+  font-family: var(--mn); font-size: 13px; font-weight: 700; color: var(--ac);
+  background: var(--abg); border: 1px solid var(--abr);
+  padding: 3px 11px; border-radius: 10px; flex-shrink: 0; white-space: nowrap;
+}
+.day-empty { font-size: 13px; color: var(--i3); padding: 24px 0; text-align: center; }
+
+/* ─── LEADERBOARD SECTION ─────────────────────────────────────────────────── */
+.lb-section {
+  padding: 0 24px 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+@media (min-width: 900px) {
+  .lb-section { padding: 0 32px 48px; }
+}
+.lb-section-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; flex-wrap: wrap; gap: 10px;
+}
+.lb-section-title { font-size: 16px; font-weight: 700; color: var(--ink); letter-spacing: -0.02em; }
+.lb-tabs {
+  display: flex; gap: 4px;
+  background: var(--sf); border: 1px solid var(--b1); border-radius: var(--rs);
+  padding: 3px;
+}
+.lb-tab {
+  background: none; border: none; cursor: pointer;
+  font-size: 12px; font-weight: 600; font-family: var(--fn);
+  color: var(--i3); padding: 5px 14px; border-radius: 6px;
+  transition: background .12s, color .12s;
+}
+.lb-tab.active { background: var(--s3); color: var(--ink); }
+.lb-tab:hover:not(.active) { color: var(--i2); }
+
+/* Personal card */
+.lb-personal {
+  background: var(--sf); border: 1px solid var(--abr); border-radius: var(--r);
+  padding: 18px 20px; margin-bottom: 16px;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  position: relative; overflow: hidden;
+}
+.lb-personal::before {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 0% 100%, rgba(170,255,0,.07) 0%, transparent 60%);
+  pointer-events: none;
+}
+.lb-p-tier {
+  font-size: 28px; flex-shrink: 0;
+}
+.lb-p-info { flex: 1; min-width: 0; }
+.lb-p-name { font-size: 15px; font-weight: 700; color: var(--ink); }
+.lb-p-tier-lbl {
+  font-size: 11px; font-weight: 700; border-radius: 10px; padding: 2px 10px;
+  display: inline-block; margin-top: 4px;
+}
+.lb-p-tier-lbl.top     { background: rgba(255,215,0,.12); color: #FFD700; border: 1px solid rgba(255,215,0,.28); }
+.lb-p-tier-lbl.active  { background: var(--abg); color: var(--ac); border: 1px solid var(--abr); }
+.lb-p-tier-lbl.growing { background: rgba(100,180,255,.10); color: #64B4FF; border: 1px solid rgba(100,180,255,.25); }
+.lb-p-meta { font-size: 11px; color: var(--i3); margin-top: 5px; }
+.lb-p-score-block { text-align: right; flex-shrink: 0; }
+.lb-p-pts { font-family: var(--mn); font-size: 36px; font-weight: 700; color: var(--ink); line-height: 1; letter-spacing: -0.03em; }
+.lb-p-rank { font-size: 11px; color: var(--i3); margin-top: 3px; }
+.lb-optout {
+  width: 100%; margin-top: 4px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding-top: 12px; border-top: 1px solid var(--b1);
+}
+.lb-optout-lbl { font-size: 11px; color: var(--i3); }
+.lb-optout-btn {
+  background: none; border: 1px solid var(--b1); border-radius: var(--rs);
+  padding: 4px 12px; font-size: 11px; color: var(--i3); font-family: var(--fn);
+  cursor: pointer; transition: border-color .12s, color .12s;
+}
+.lb-optout-btn:hover { border-color: var(--rd); color: var(--rd); }
+.lb-optout-btn.opted-out { border-color: var(--abr); color: var(--ac); }
+
+/* Board list */
+.lb-board { background: var(--sf); border: 1px solid var(--b1); border-radius: var(--r); overflow: hidden; }
+.lb-tier-group-hd {
+  padding: 10px 16px;
+  background: var(--s2); border-bottom: 1px solid var(--b1);
+  font-size: 10px; font-weight: 700; color: var(--i3);
+  text-transform: uppercase; letter-spacing: 0.09em;
+  display: flex; align-items: center; gap: 6px;
+}
+.lb-entry {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; border-bottom: 1px solid var(--b1);
+  transition: background .12s;
+}
+.lb-entry:last-child { border-bottom: none; }
+.lb-entry:hover { background: var(--s2); }
+.lb-entry.lb-you { background: var(--abg); }
+.lb-entry.lb-you:hover { background: rgba(170,255,0,.14); }
+.lb-e-rank { font-family: var(--mn); font-size: 11px; color: var(--i3); width: 24px; flex-shrink: 0; text-align: right; }
+.lb-e-av {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  background: var(--s3); border: 1px solid var(--b1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: var(--i2);
+}
+.lb-entry.lb-you .lb-e-av { background: var(--ac-d); border-color: var(--abr); color: var(--ac); }
+.lb-e-name { font-size: 13px; color: var(--ink); flex: 1; }
+.lb-e-you-tag { font-size: 9px; color: var(--ac); background: var(--abg); padding: 1px 7px; border-radius: 8px; margin-left: 6px; }
+.lb-e-pts {
+  font-family: var(--mn); font-size: 14px; font-weight: 700; color: var(--ink);
+  padding: 3px 12px; background: var(--s2); border-radius: 10px;
+}
+.lb-entry.lb-you .lb-e-pts { background: var(--abg); color: var(--ac); }
+
+/* ─── ACTIVITY LOG (collapsible months) ──────────────────────────────────── */
+.log-section {
+  padding: 0 24px 48px;
+  max-width: 1200px; margin: 0 auto; width: 100%;
+}
+@media (min-width: 900px) { .log-section { padding: 0 32px 56px; } }
+.log-section-title { font-size: 16px; font-weight: 700; color: var(--ink); letter-spacing: -0.02em; margin-bottom: 16px; }
+
+.log-month {
+  background: var(--sf); border: 1px solid var(--b1); border-radius: var(--r);
+  margin-bottom: 10px; overflow: hidden;
+}
+.log-month-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px; cursor: pointer; user-select: none;
+  transition: background .12s;
+}
+.log-month-hd:hover { background: var(--s2); }
+.log-month-hd-left { display: flex; align-items: center; gap: 10px; }
+.log-month-name { font-size: 14px; font-weight: 700; color: var(--ink); }
+.log-month-count { font-size: 11px; color: var(--i3); }
+.log-month-total {
+  font-family: var(--mn); font-size: 13px; font-weight: 700; color: var(--ac);
+  background: var(--abg); border: 1px solid var(--abr);
+  padding: 3px 12px; border-radius: 10px;
+}
+.log-month-chevron { font-size: 12px; color: var(--i3); margin-left: 10px; transition: transform .2s; }
+.log-month.open .log-month-chevron { transform: rotate(180deg); }
+.log-month-body { display: none; border-top: 1px solid var(--b1); }
+.log-month.open .log-month-body { display: block; }
+
+.log-day-item {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 10px;
+  padding: 12px 18px; border-bottom: 1px solid var(--b1);
+  transition: background .12s;
+}
+.log-day-item:last-child { border-bottom: none; }
+.log-day-item:hover { background: var(--s2); }
+.log-day-left { flex: 1; min-width: 0; }
+.log-day-date { font-size: 13px; font-weight: 600; color: var(--ink); }
+.log-day-files { font-size: 11px; color: var(--i3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.log-day-files .extra { color: var(--ac); font-weight: 600; }
+.log-day-accs { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+.log-day-acc-tag {
+  font-size: 9px; color: var(--i3);
+  background: var(--s3); border: 1px solid var(--b1);
+  padding: 1px 7px; border-radius: 8px;
+}
+.log-day-score {
+  font-family: var(--mn); font-size: 13px; font-weight: 700; color: var(--ac);
+  background: var(--abg); border: 1px solid var(--abr);
+  padding: 3px 11px; border-radius: 10px; flex-shrink: 0; white-space: nowrap;
+}
+.log-empty { font-size: 13px; color: var(--i3); padding: 24px 18px; text-align: center; }
+
+/* ─── NO DATA STATE ───────────────────────────────────────────────────────── */
+.no-data {
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 100vh; padding: 24px; text-align: center; gap: 12px;
+}
+.no-data.active { display: flex; }
+.no-data-icon { font-size: 48px; margin-bottom: 8px; }
+.no-data-title { font-size: 20px; font-weight: 700; color: var(--ink); }
+.no-data-sub   { font-size: 13px; color: var(--i3); max-width: 320px; line-height: 1.6; }
+.no-data-btn {
+  margin-top: 8px; padding: 11px 24px;
+  background: var(--s2); color: var(--i2);
+  border: 1px solid var(--b1); border-radius: var(--rs);
+  font-size: 13px; font-family: var(--fn); cursor: pointer;
+  transition: border-color .12s, color .12s;
+}
+.no-data-btn:hover { border-color: var(--abr); color: var(--ink); }
+</style>
+</head>
+<body>
+
+<!-- ─── AUTH ─────────────────────────────────────────────────────────────── -->
+<div id="screen-auth" class="active">
+  <div class="auth-card">
+    <div class="auth-logo">✏️</div>
+    <div class="auth-title">Design Commits</div>
+    <div class="auth-sub">View your design activity dashboard</div>
+    <div class="auth-form">
+      <div>
+        <label class="auth-label" for="login-email">Work Email</label>
+        <input class="auth-input" type="email" id="login-email"
+               placeholder="you@company.com" autocomplete="email">
+      </div>
+      <div class="auth-error" id="login-error"></div>
+      <button class="auth-btn" id="login-btn" disabled>View Dashboard →</button>
+      <div class="auth-note">Your data lives locally — no passwords, no accounts.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── NO DATA ───────────────────────────────────────────────────────────── -->
+<div class="no-data" id="screen-nodata">
+  <div class="no-data-icon">🌱</div>
+  <div class="no-data-title">No data yet</div>
+  <div class="no-data-sub" id="nodata-msg">
+    Open the Design Commits plugin in Figma and start designing to see your activity here.
+  </div>
+  <button class="no-data-btn" onclick="signOut()">← Try a different email</button>
+</div>
+
+<!-- ─── DASHBOARD ─────────────────────────────────────────────────────────── -->
+<div id="screen-dash">
+
+  <!-- Public view banner -->
+  <div class="public-banner" id="public-banner">
+    <div class="public-banner-lbl">👁 Public view — some details are hidden</div>
+    <button class="public-embed-btn" onclick="copyEmbedCode()">Copy embed code</button>
+  </div>
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="tb-left">
+      <span class="tb-logo">✏️</span>
+      <span class="tb-title">Design Commits</span>
+    </div>
+    <div class="tb-right">
+      <div class="tb-user">
+        <div class="tb-av" id="tb-av"></div>
+        <span class="tb-email" id="tb-email"></span>
+      </div>
+      <div class="chip" id="tb-streak">Day 1</div>
+      <button class="tb-share-btn" id="share-public-btn" onclick="sharePublicView()" title="Share public view" style="display:none">👁 Share</button>
+      <button class="tb-share-btn" id="embed-btn" onclick="copyEmbedCode()" title="Copy embed code" style="display:none">&#60;/&#62; Embed</button>
+      <button class="tb-signout" id="signout-btn" onclick="signOut()">Sign out</button>
+    </div>
+  </div>
+
+  <!-- Grid -->
+  <div class="dash-main">
+
+    <!-- HEATMAP -->
+    <div class="card heatmap-area">
+      <div class="hm-head">
+        <div class="card-label" style="margin:0">Activity</div>
+        <div class="hm-range-btn" id="hm-range-btn" onclick="toggleRangeDropdown()">
+          <span id="hm-range-label">6 months</span>
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="hm-range-drop" id="hm-range-drop">
+            <div class="hm-range-opt" data-val="13" onclick="selectRange(event,13,'3 months')">3 months</div>
+            <div class="hm-range-opt active" data-val="26" onclick="selectRange(event,26,'6 months')">6 months</div>
+            <div class="hm-range-opt" data-val="52" onclick="selectRange(event,52,'12 months')">12 months</div>
+          </div>
+        </div>
+      </div>
+      <div class="hm-wrap">
+        <div class="hm-months-row" id="hm-months-row"></div>
+      </div>
+      <div class="hm-footer">
+        <a class="hm-embed-link" id="hm-embed-link" href="#" onclick="copyEmbedCode();return false;" title="Copy embed code">
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M3.5 2.5H2A1 1 0 001 3.5v4A1 1 0 002 8.5h6A1 1 0 009 7.5v-4A1 1 0 008 2.5H6.5M5 1v5M3 4l2 2 2-2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Embed
+        </a>
+        <div class="hm-legend">
+          <span>Less</span>
+          <div class="hl-cell l0"></div><div class="hl-cell l1"></div>
+          <div class="hl-cell l2"></div><div class="hl-cell l3"></div>
+          <div class="hl-cell l4"></div>
+          <span>More</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div class="card stats-area">
+      <div class="card-label">Overview</div>
+      <div class="stats-grid">
+        <div class="stat-cell">
+          <div class="stat-val" id="stat-streak">0<span> days</span></div>
+          <div class="stat-lbl">Current streak</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-val" id="stat-days">0</div>
+          <div class="stat-lbl">Days active</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-val" id="stat-total">0</div>
+          <div class="stat-lbl">All-time changes</div>
+        </div>
+        <div class="stat-cell">
+          <div class="stat-val" id="stat-best">0</div>
+          <div class="stat-lbl">Best single day</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TODAY'S SCORE — full-width banner -->
+    <div class="card score-area">
+      <div class="card-label">Today's Design Score</div>
+      <div class="score-banner">
+        <div class="score-main">
+          <div class="score-num" id="score-num">0</div>
+          <div class="score-main-meta">
+            <div class="score-sub">nodes today · all accounts</div>
+            <div class="live-row"><div class="live-dot"></div>Auto-tracking · 15s</div>
+          </div>
+        </div>
+        <div class="score-pills">
+          <div class="score-pill cr">
+            <div class="sr-val" id="score-cr">0</div>
+            <div class="sr-lbl">Added</div>
+          </div>
+          <div class="pill-div"></div>
+          <div class="score-pill dl">
+            <div class="sr-val" id="score-dl">0</div>
+            <div class="sr-lbl">Removed</div>
+          </div>
+        </div>
+        <div class="acc-bd" id="acc-bd" style="display:none"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ─── LEADERBOARD ───────────────────────────────────────────────────── -->
+  <div class="lb-section" id="lb-section">
+    <div class="lb-section-hd">
+      <div class="lb-section-title">🏅 Monthly Leaderboard</div>
+      <div class="lb-tabs">
+        <button class="lb-tab active" data-period="month" onclick="switchLbPeriod('month')">This Month</button>
+        <button class="lb-tab"        data-period="week"  onclick="switchLbPeriod('week')">This Week</button>
+        <button class="lb-tab"        data-period="today" onclick="switchLbPeriod('today')">Today</button>
+      </div>
+    </div>
+    <!-- Personal card -->
+    <div class="lb-personal" id="lb-personal">
+      <div class="lb-p-tier" id="lb-p-emoji">⚡</div>
+      <div class="lb-p-info">
+        <div class="lb-p-name" id="lb-p-name">You</div>
+        <div class="lb-p-tier-lbl active" id="lb-p-tier-lbl">⚡ Active</div>
+        <div class="lb-p-meta" id="lb-p-meta"></div>
+      </div>
+      <div class="lb-p-score-block">
+        <div class="lb-p-pts" id="lb-p-pts">0</div>
+        <div class="lb-p-rank" id="lb-p-rank">Rank #—</div>
+      </div>
+      <div class="lb-optout" id="lb-optout" style="display:none">
+        <span class="lb-optout-lbl">Visible to others on the board</span>
+        <button class="lb-optout-btn" id="lb-optout-btn" onclick="toggleOptOut()">Opt out</button>
+      </div>
+    </div>
+    <!-- Board -->
+    <div class="lb-board" id="lb-board"></div>
+  </div>
+
+  <!-- ─── ACTIVITY LOG ──────────────────────────────────────────────────── -->
+  <div class="log-section" id="log-section">
+    <div class="log-section-title">📅 Activity Log</div>
+    <div id="log-list"></div>
+  </div>
+
+</div>
+
+<script>
+// ─── STORAGE ─────────────────────────────────────────────────────────────────
+function lsKey(email) { return "dc_v1_" + email; }
+
+function readStore(email) {
+  try { return JSON.parse(localStorage.getItem(lsKey(email)) || "{}"); }
+  catch(e) { return {}; }
+}
+
+// Aggregate all accounts' data per day
+function aggregateStore(email) {
+  const store      = readStore(email);
+  const heatmap    = {};
+  const fileMap    = {};
+  const accountMap = {};
+  const todayMap   = {}; // accId → { name, changes }
+
+  for (const date in store) {
+    const dayAccs = store[date];
+    let   total   = 0;
+    let   allFiles = [];
+    accountMap[date] = {};
+
+    for (const accId in dayAccs) {
+      const acc = dayAccs[accId];
+      const c   = acc.changes || {};
+      const t   = (c.created || 0) + (c.deleted || 0) + (c.edited || 0);
+      total += t;
+      accountMap[date][accId] = { name: acc.name || accId, total: t, files: acc.files || [] };
+      allFiles = allFiles.concat(acc.files || []);
+    }
+
+    if (total > 0) heatmap[date] = total;
+
+    const seen = {};
+    fileMap[date] = allFiles.filter(f => {
+      if (seen[f.key]) return false;
+      seen[f.key] = true;
+      return true;
+    });
+  }
+  return { heatmap, fileMap, accountMap };
+}
+
+// ─── PUBLIC MODE ─────────────────────────────────────────────────────────────
+let isPublicView = false;
+
+function applyPublicMode(email) {
+  isPublicView = true;
+  // Hide sensitive elements
+  document.getElementById("score-cr").closest(".score-pills").style.display = "none";
+  document.getElementById("acc-bd").style.display = "none";
+  document.getElementById("public-banner").classList.add("show");
+  document.getElementById("signout-btn").style.display = "none";
+  document.getElementById("embed-btn").style.display   = "flex";
+  document.getElementById("share-public-btn").style.display = "none";
+  // Replace email display with anonymous label
+  document.getElementById("tb-email").textContent = "Public view";
+  document.getElementById("tb-av").textContent    = "✏️";
+  document.getElementById("tb-av").style.background = "var(--abg)";
+}
+
+function sharePublicView() {
+  const url = window.location.origin + window.location.pathname + "#public:" + encodeURIComponent(currentEmail);
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById("share-public-btn");
+    btn.textContent = "✓ Copied!";
+    btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = "👁 Share"; btn.classList.remove("copied"); }, 2000);
+  });
+}
+
+function copyEmbedCode() {
+  const base  = window.location.origin + window.location.pathname.replace("dashboard.html", "embed.html");
+  const email = isPublicView ? decodeURIComponent(window.location.hash.slice(8)) : currentEmail;
+  const url   = base + "#" + encodeURIComponent(email);
+  const code  = `<iframe src="${url}" width="720" height="120" frameborder="0" style="border-radius:10px"></iframe>`;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.getElementById(isPublicView ? "embed-btn" : "embed-btn");
+    const lbl = btn.textContent;
+    btn.textContent = "✓ Copied!";
+    setTimeout(() => { btn.textContent = lbl; }, 2000);
+    // Also update public embed button if visible
+    const pb = document.querySelector(".public-embed-btn");
+    if (pb) { const t = pb.textContent; pb.textContent = "✓ Copied!"; setTimeout(() => pb.textContent = t, 2000); }
+  });
+}
+
+// ─── AUTH ─────────────────────────────────────────────────────────────────────
+let currentEmail = null;
+
+const emailInput = document.getElementById("login-email");
+const loginBtn   = document.getElementById("login-btn");
+const valid      = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+
+emailInput.oninput   = () => { loginBtn.disabled = !valid(emailInput.value); };
+emailInput.onkeydown = e => { if (e.key === "Enter" && !loginBtn.disabled) loginBtn.click(); };
+
+loginBtn.onclick = () => {
+  const email = emailInput.value.trim().toLowerCase();
+  if (!valid(email)) return;
+  const store = readStore(email);
+  if (Object.keys(store).length === 0) {
+    const err = document.getElementById("login-error");
+    err.textContent = `No data found for ${email}. Open the Figma plugin first.`;
+    err.classList.add("show");
+    return;
+  }
+  loadDashboard(email);
+};
+
+function signOut() {
+  currentEmail = null;
+  document.getElementById("screen-auth").classList.add("active");
+  document.getElementById("screen-dash").classList.remove("active");
+  document.getElementById("screen-nodata").classList.remove("active");
+  emailInput.value = "";
+  loginBtn.disabled = true;
+  const err = document.getElementById("login-error");
+  err.classList.remove("show");
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────────────────────
+function loadDashboard(email) {
+  currentEmail = email;
+  document.getElementById("screen-auth").classList.remove("active");
+  document.getElementById("screen-nodata").classList.remove("active");
+  document.getElementById("screen-dash").classList.add("active");
+  // Show share + embed buttons for logged-in owner
+  if (!isPublicView) {
+    document.getElementById("share-public-btn").style.display = "flex";
+    document.getElementById("embed-btn").style.display        = "flex";
+  }
+
+  const { heatmap, fileMap, accountMap } = aggregateStore(email);
+  const today = todayStr();
+
+  // Header
+  document.getElementById("tb-av").textContent    = email.slice(0, 1).toUpperCase();
+  document.getElementById("tb-email").textContent = email;
+
+  // Streak
+  const streak = calcStreak(heatmap);
+  document.getElementById("tb-streak").textContent =
+    streak > 1 ? `🔥 ${streak} days` : (heatmap[today] > 0 ? "🔥 1 day" : "Day 1");
+
+  // Heatmap
+  renderHeatmap(heatmap);
+
+  // Score
+  const todayTotal = heatmap[today] || 0;
+  const todayAccs  = accountMap[today] || {};
+  document.getElementById("score-num").textContent = todayTotal;
+
+  // Aggregate today's created/deleted across all accounts
+  let todayCr = 0, todayDl = 0;
+  for (const accId in todayAccs) {
+    const store  = readStore(email);
+    const dayAcc = store[today] && store[today][accId];
+    if (dayAcc && dayAcc.changes) {
+      todayCr += dayAcc.changes.created || 0;
+      todayDl += dayAcc.changes.deleted || 0;
+    }
+  }
+  document.getElementById("score-cr").textContent = todayCr;
+  document.getElementById("score-dl").textContent = todayDl;
+
+  // Account breakdown
+  renderAccBreakdown(todayAccs, null);
+
+  // Stats
+  renderStats(heatmap);
+
+  // Leaderboard + activity log
+  const displayName = email.split("@")[0];
+  renderLeaderboard(heatmap, email, displayName);
+  renderActivityLog(heatmap, fileMap, accountMap);
+}
+
+// ─── HEATMAP ──────────────────────────────────────────────────────────────────
+function renderHeatmap(heatmap, weeks) {
+  window._lastHeatmap = heatmap;
+  // Default to 26 weeks (6 months)
+  if (!weeks) weeks = window._hmWeeks || 26;
+  window._hmWeeks = weeks;
+
+  const today    = new Date(); today.setHours(0,0,0,0);
+  const scores   = Object.values(heatmap).filter(v => v > 0);
+  const maxScore = scores.length ? Math.max(...scores) : 1;
+
+  // ── Start: Sunday of the week containing the 1st of the earliest month ──────
+  // Go back `weeks` weeks from this week's Sunday, but always show full current month.
+  const thisWeekSun = new Date(today);
+  thisWeekSun.setDate(today.getDate() - today.getDay());
+
+  const pastStart = new Date(thisWeekSun);
+  pastStart.setDate(thisWeekSun.getDate() - (weeks - 1) * 7);
+
+  // Always include Sunday of week containing 1st of current month
+  const curMonthFirst = new Date(today.getFullYear(), today.getMonth(), 1);
+  const curMonthSun   = new Date(curMonthFirst);
+  curMonthSun.setDate(curMonthFirst.getDate() - curMonthFirst.getDay());
+  const startDay = curMonthSun < pastStart ? curMonthSun : pastStart;
+
+  // End: Saturday of next week (7 days of future outline cells)
+  const endDay = new Date(thisWeekSun);
+  endDay.setDate(thisWeekSun.getDate() + 13); // ~2 future weeks
+
+  // ── Build month groups ───────────────────────────────────────────────────────
+  // Each month = { label, monthIdx, year, weeks: [[cell…]×7] }
+  // Weeks are padded with spacer cells so only days belonging to THIS month fill their slot.
+  const monthMap = new Map(); // key = "YYYY-MM"
+
+  let cur = new Date(startDay);
+  while (cur <= endDay) {
+    const yr  = cur.getFullYear();
+    const mo  = cur.getMonth(); // 0-based
+    const mk  = `${yr}-${String(mo + 1).padStart(2, "0")}`;
+    if (!monthMap.has(mk)) monthMap.set(mk, { label: cur.toLocaleDateString("en-US", { month: "short" }), year: yr, mo, weeks: [] });
+    cur.setDate(cur.getDate() + 1);
+  }
+
+  // For each month, build its week columns:
+  // week = array of 7 slots; slots outside the month are { spacer: true }
+  monthMap.forEach((m, mk) => {
+    const yr = m.year, mo = m.mo;
+    const firstDay  = new Date(yr, mo, 1);
+    const lastDay   = new Date(yr, mo + 1, 0); // last day of month
+    // Sunday of the week containing the 1st
+    const wkStart = new Date(firstDay);
+    wkStart.setDate(firstDay.getDate() - firstDay.getDay());
+    // Saturday of the week containing the last day
+    const wkEnd = new Date(lastDay);
+    wkEnd.setDate(lastDay.getDate() + (6 - lastDay.getDay()));
+
+    let wkCur = new Date(wkStart);
+    while (wkCur <= wkEnd) {
+      // only include weeks that are at least partially within our display window
+      const wkSun = new Date(wkCur);
+      const wkSat = new Date(wkCur); wkSat.setDate(wkCur.getDate() + 6);
+      if (wkSat >= startDay && wkSun <= endDay) {
+        const slots = [];
+        for (let day = 0; day < 7; day++) {
+          const d = new Date(wkCur); d.setDate(wkCur.getDate() + day);
+          if (d.getMonth() !== mo || d.getFullYear() !== yr || d < startDay || d > endDay) {
+            slots.push({ spacer: true });
+          } else {
+            const key      = fmtDate(d);
+            const score    = heatmap[key] || 0;
+            const isFuture = d > today;
+            const isPast   = d <= today;
+            let level = 0;
+            if (isPast && score > 0) {
+              const r = score / maxScore;
+              level = r <= .25 ? 1 : r <= .5 ? 2 : r <= .75 ? 3 : 4;
+            }
+            slots.push({ key, score, level, isFuture, isPast });
+          }
+        }
+        m.weeks.push(slots);
+      }
+      wkCur.setDate(wkCur.getDate() + 7);
+    }
+  });
+
+  // ── Check if a month has any activity ───────────────────────────────────────
+  function monthHasActivity(m) {
+    return m.weeks.some(w => w.some(c => !c.spacer && !c.isFuture && c.score > 0));
+  }
+
+  // ── Render ───────────────────────────────────────────────────────────────────
+  const row = document.getElementById("hm-months-row");
+  row.innerHTML = "";
+
+  monthMap.forEach((m) => {
+    if (!m.weeks.length) return;
+    const hasActivity = monthHasActivity(m);
+
+    const group = document.createElement("div");
+    group.className = "hm-month-group";
+
+    const lbl = document.createElement("div");
+    lbl.className   = "hm-month-lbl";
+    lbl.textContent = m.label;
+    group.appendChild(lbl);
+
+    const grid = document.createElement("div");
+    grid.className = "hm-month-weeks";
+
+    m.weeks.forEach(slots => {
+      slots.forEach(c => {
+        const el = document.createElement("div");
+        if (c.spacer) {
+          el.className = "hm-cell spacer";
+        } else if (c.isFuture) {
+          el.className = "hm-cell future";
+          el.title = c.key;
+        } else {
+          // Past day — if month has no activity at all, use outline style
+          const cls = (!hasActivity && c.score === 0) ? "hm-cell empty" : "hm-cell";
+          el.className = cls;
+          el.setAttribute("data-l", c.level);
+          el.title = c.score > 0 ? `${c.key}: ${c.score} changes` : c.key;
+        }
+        grid.appendChild(el);
+      });
+    });
+
+    group.appendChild(grid);
+    row.appendChild(group);
+  });
+}
+
+// ─── RANGE DROPDOWN ───────────────────────────────────────────────────────────
+function toggleRangeDropdown() {
+  const btn  = document.getElementById("hm-range-btn");
+  const drop = document.getElementById("hm-range-drop");
+  const open = drop.classList.toggle("open");
+  btn.classList.toggle("open", open);
+  if (open) {
+    const close = (e) => {
+      if (!btn.contains(e.target)) {
+        drop.classList.remove("open");
+        btn.classList.remove("open");
+        document.removeEventListener("click", close);
+      }
+    };
+    setTimeout(() => document.addEventListener("click", close), 0);
+  }
+}
+
+function selectRange(e, val, label) {
+  e.stopPropagation();
+  window._hmWeeks = val;
+  document.getElementById("hm-range-label").textContent = label;
+  document.querySelectorAll(".hm-range-opt").forEach(o => o.classList.toggle("active", parseInt(o.dataset.val) === val));
+  document.getElementById("hm-range-drop").classList.remove("open");
+  document.getElementById("hm-range-btn").classList.remove("open");
+  renderHeatmap(window._lastHeatmap, val);
+}
+
+// ─── ACCOUNT BREAKDOWN ────────────────────────────────────────────────────────
+function renderAccBreakdown(todayAccs, currentAccId) {
+  const bd     = document.getElementById("acc-bd");
+  const accIds = Object.keys(todayAccs);
+  if (accIds.length === 0) { bd.style.display = "none"; return; }
+
+  bd.style.display = "";
+  bd.innerHTML = `<div class="acc-bd-lbl">Across accounts</div>`;
+  accIds.sort((a, b) => todayAccs[b].total - todayAccs[a].total);
+  accIds.forEach(accId => {
+    const acc       = todayAccs[accId];
+    const isCurrent = accId === currentAccId;
+    const row       = document.createElement("div");
+    row.className   = "acc-row";
+    row.innerHTML   =
+      `<div class="acc-dot${isCurrent ? " current" : ""}"></div>` +
+      `<span class="acc-name">${esc(acc.name || accId)}${isCurrent ? `<span class="you-tag">you</span>` : ""}</span>` +
+      `<span class="acc-total">${acc.total}</span>`;
+    bd.appendChild(row);
+  });
+}
+
+// ─── STATS ────────────────────────────────────────────────────────────────────
+function renderStats(heatmap) {
+  const streak = calcStreak(heatmap);
+  const days   = Object.values(heatmap).filter(v => v > 0).length;
+  const total  = Object.values(heatmap).reduce((s, v) => s + v, 0);
+  const best   = Object.values(heatmap).reduce((m, v) => v > m ? v : m, 0);
+
+  document.getElementById("stat-streak").innerHTML = `${streak}<span> days</span>`;
+  document.getElementById("stat-days").textContent  = days;
+  document.getElementById("stat-total").textContent = total > 999
+    ? (total / 1000).toFixed(1) + "k" : total;
+  document.getElementById("stat-best").textContent  = best;
+}
+
+// ─── ACTIVITY LOG (collapsible months) ───────────────────────────────────────
+function renderActivityLog(heatmap, fileMap, accountMap) {
+  const container = document.getElementById("log-list");
+  const entries   = Object.entries(heatmap)
+    .filter(([, v]) => v > 0)
+    .sort(([a], [b]) => b.localeCompare(a));
+
+  if (!entries.length) {
+    container.innerHTML = `<div class="log-empty">No activity yet — start designing!</div>`;
+    return;
+  }
+
+  // Group by YYYY-MM
+  const months = {};
+  entries.forEach(([date, score]) => {
+    const key = date.slice(0, 7); // YYYY-MM
+    if (!months[key]) months[key] = [];
+    months[key].push([date, score]);
+  });
+
+  container.innerHTML = "";
+  Object.keys(months).sort((a, b) => b.localeCompare(a)).forEach((monthKey, idx) => {
+    const days      = months[monthKey];
+    const monthTotal = days.reduce((s, [, v]) => s + v, 0);
+    const d         = new Date(monthKey + "-01T00:00:00");
+    const monthName = fmtDisplayMonth(d);
+
+    const section = document.createElement("div");
+    section.className = "log-month" + (idx === 0 ? " open" : "");
+
+    const daysHtml = days.map(([date, score]) => {
+      const dd      = new Date(date + "T00:00:00");
+      const lbl     = fmtDisplayDate(dd);
+      const files   = fileMap[date] || [];
+      const accs    = accountMap[date] || {};
+      const accIds  = Object.keys(accs);
+
+      let fileHtml = "";
+      if (files.length === 1)      fileHtml = `<div class="log-day-files">${esc(files[0].name)}</div>`;
+      else if (files.length > 1)   fileHtml = `<div class="log-day-files">${esc(files[0].name)} <span class="extra">+${files.length - 1} file${files.length - 1 > 1 ? "s" : ""}</span></div>`;
+
+      const accTagsHtml = accIds.length > 1
+        ? `<div class="log-day-accs">${accIds.map(id => `<span class="log-day-acc-tag">${esc(accs[id].name || id)}</span>`).join("")}</div>`
+        : "";
+
+      return `<div class="log-day-item">
+        <div class="log-day-left">
+          <div class="log-day-date">${esc(lbl)}</div>
+          ${fileHtml}${accTagsHtml}
+        </div>
+        <div class="log-day-score">+${score}</div>
+      </div>`;
+    }).join("");
+
+    section.innerHTML = `
+      <div class="log-month-hd" onclick="this.closest('.log-month').classList.toggle('open')">
+        <div class="log-month-hd-left">
+          <span class="log-month-name">${esc(monthName)}</span>
+          <span class="log-month-count">${days.length} day${days.length > 1 ? "s" : ""}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="log-month-total">+${monthTotal}</span>
+          <span class="log-month-chevron">▾</span>
+        </div>
+      </div>
+      <div class="log-month-body">${daysHtml}</div>`;
+    container.appendChild(section);
+  });
+}
+
+// ─── LEADERBOARD ─────────────────────────────────────────────────────────────
+const LB_PEERS = [
+  { name: "Neha R.",   scores: { month: 2840, week: 680, today: 210 } },
+  { name: "Tariq M.",  scores: { month: 2650, week: 590, today: 185 } },
+  { name: "Ines W.",   scores: { month: 2100, week: 510, today: 160 } },
+  { name: "Julio S.",  scores: { month: 1420, week: 320, today: 95  } },
+  { name: "Aiko T.",   scores: { month: 1280, week: 290, today: 88  } },
+  { name: "Dev P.",    scores: { month: 1050, week: 240, today: 72  } },
+  { name: "Sara F.",   scores: { month:  890, week: 200, today: 60  } },
+  { name: "Kobe J.",   scores: { month:  720, week: 160, today: 45  } },
+  { name: "Mia L.",    scores: { month:  560, week: 125, today: 30  } },
+  { name: "Reza K.",   scores: { month:  380, week:  85, today: 20  } },
+  { name: "Zara B.",   scores: { month:  210, week:  48, today:  8  } }
+];
+
+const LB_PERIOD_TIERS = {
+  top:    { label: "🏆 Top Tier",  cls: "top",     emoji: "🏆" },
+  active: { label: "⚡ Active",    cls: "active",  emoji: "⚡" },
+  growing:{ label: "🌱 Growing",   cls: "growing", emoji: "🌱" }
+};
+
+let lbPeriod  = "month";
+let lbOptedOut = false;
+let lbHeatmap  = {};
+let lbEmail    = "";
+let lbUserName = "";
+
+function calcPeriodScore(heatmap, period) {
+  const now = new Date(); now.setHours(0,0,0,0);
+
+  let entries;
+  if (period === "month") {
+    const prefix = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+    entries = Object.entries(heatmap).filter(([d]) => d.startsWith(prefix));
+  } else if (period === "week") {
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay());
+    entries = Object.entries(heatmap).filter(([d]) => new Date(d + "T00:00:00") >= weekStart);
+  } else { // today
+    const todayKey = fmtDate(now);
+    entries = Object.entries(heatmap).filter(([d]) => d === todayKey);
+  }
+
+  const activeDays  = entries.filter(([,v]) => v > 0).length;
+  const periodTotal = entries.reduce((s,[,v]) => s+v, 0);
+  const streak      = period === "month" ? calcStreak(heatmap) : (activeDays > 0 ? 1 : 0);
+  const volBonus    = Math.min(90, Math.round((periodTotal / (period === "today" ? 200 : period === "week" ? 500 : 2000)) * 90));
+  return (activeDays * 10) + (streak * 5) + volBonus;
+}
+
+function switchLbPeriod(period) {
+  lbPeriod = period;
+  document.querySelectorAll(".lb-tab").forEach(t => {
+    t.classList.toggle("active", t.dataset.period === period);
+  });
+  renderLeaderboard(lbHeatmap, lbEmail, lbUserName);
+}
+
+function toggleOptOut() {
+  lbOptedOut = !lbOptedOut;
+  const btn  = document.getElementById("lb-optout-btn");
+  btn.textContent = lbOptedOut ? "Opt back in" : "Opt out";
+  btn.classList.toggle("opted-out", lbOptedOut);
+  renderLeaderboard(lbHeatmap, lbEmail, lbUserName);
+}
+
+function renderLeaderboard(heatmap, email, userName) {
+  lbHeatmap  = heatmap;
+  lbEmail    = email;
+  lbUserName = userName;
+
+  const userScore = calcPeriodScore(heatmap, lbPeriod);
+
+  // Build full list including user (unless opted out)
+  const peers = LB_PEERS.map(p => ({ name: p.name, score: p.scores[lbPeriod], isUser: false }));
+  const all   = lbOptedOut
+    ? peers
+    : [...peers, { name: userName, score: userScore, isUser: true }];
+  all.sort((a, b) => b.score - a.score);
+
+  const n         = all.length;
+  const topCut    = Math.ceil(n * 0.25);
+  const activeCut = Math.ceil(n * 0.75);
+  const userIdx   = all.findIndex(p => p.isUser);
+  const effectiveIdx = lbOptedOut ? -1 : userIdx;
+
+  function getTier(idx) {
+    if (idx < topCut)    return "top";
+    if (idx < activeCut) return "active";
+    return "growing";
+  }
+
+  const userTierKey = lbOptedOut ? "active" : getTier(userIdx);
+  const tierInfo    = LB_PERIOD_TIERS[userTierKey];
+
+  // Personal card
+  document.getElementById("lb-p-emoji").textContent   = tierInfo.emoji;
+  document.getElementById("lb-p-name").textContent    = userName;
+  document.getElementById("lb-p-pts").textContent     = userScore;
+  const tierLbl = document.getElementById("lb-p-tier-lbl");
+  tierLbl.textContent = tierInfo.label;
+  tierLbl.className   = `lb-p-tier-lbl ${tierInfo.cls}`;
+  document.getElementById("lb-p-rank").textContent    = lbOptedOut ? "Opted out" : `Rank #${userIdx + 1} of ${n}`;
+
+  const periodLabels = { month: "This month", week: "This week", today: "Today" };
+  document.getElementById("lb-p-meta").textContent = `${periodLabels[lbPeriod]} · ${calcPeriodScore(heatmap, lbPeriod)} pts`;
+
+  // Show opt-out only for Active/Growing (not Top Tier)
+  const optoutRow = document.getElementById("lb-optout");
+  if (userTierKey !== "top") {
+    optoutRow.style.display = "";
+    const btn = document.getElementById("lb-optout-btn");
+    btn.textContent = lbOptedOut ? "Opt back in" : "Opt out";
+    btn.classList.toggle("opted-out", lbOptedOut);
+  } else {
+    optoutRow.style.display = "none";
+  }
+
+  // Build board grouped by tier
+  const board = document.getElementById("lb-board");
+  board.innerHTML = "";
+
+  const tierGroups = [
+    { key: "top",     label: "🏆 Top Tier",  members: [] },
+    { key: "active",  label: "⚡ Active",     members: [] },
+    { key: "growing", label: "🌱 Growing",    members: [] }
+  ];
+
+  all.forEach((p, i) => {
+    const t = getTier(i);
+    tierGroups.find(g => g.key === t).members.push({ ...p, rank: i + 1 });
+  });
+
+  tierGroups.forEach(group => {
+    if (!group.members.length) return;
+
+    const hd = document.createElement("div");
+    hd.className = "lb-tier-group-hd";
+    hd.textContent = group.label;
+    board.appendChild(hd);
+
+    group.members.forEach(p => {
+      const initials = p.name.slice(0, 1).toUpperCase();
+      const row = document.createElement("div");
+      row.className = "lb-entry" + (p.isUser ? " lb-you" : "");
+      row.innerHTML =
+        `<span class="lb-e-rank">#${p.rank}</span>` +
+        `<div class="lb-e-av">${initials}</div>` +
+        `<span class="lb-e-name">${esc(p.name)}${p.isUser ? `<span class="lb-e-you-tag">you</span>` : ""}</span>` +
+        `<span class="lb-e-pts">${p.score}</span>`;
+      board.appendChild(row);
+    });
+  });
+}
+
+// ─── DEMO MODE ────────────────────────────────────────────────────────────────
+function seedDemoData() {
+  const email = "demo@designcommits.app";
+  const fmt   = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  const today = new Date();
+  const FILES = [
+    [{ name: "Mobile App — v3", key: "f1" }],
+    [{ name: "Design System", key: "f2" }],
+    [{ name: "Mobile App — v3", key: "f1" }, { name: "Landing Page", key: "f3" }],
+    [{ name: "Client Portal", key: "f4" }],
+  ];
+  // Realistic skip pattern: skip ~25% of days
+  const SKIP = new Set([2, 5, 9, 14, 18, 22, 27, 31, 35, 38, 42, 47, 52, 56, 60, 65]);
+  const store = {};
+  for (let i = 0; i < 70; i++) {
+    if (SKIP.has(i)) continue;
+    const d   = new Date(today); d.setDate(today.getDate() - i);
+    const key = fmt(d);
+    const base = 80 + Math.round(Math.sin(i * 0.4) * 50 + Math.random() * 60);
+    store[key] = {
+      "figma-personal": {
+        name:    "Sanchit — Personal",
+        changes: { created: Math.round(base * 0.35), deleted: Math.round(base * 0.12), edited: Math.round(base * 0.53) },
+        files:   FILES[i % FILES.length],
+        ts:      Date.now()
+      }
+    };
+    // Client 1 contributes every 3rd day
+    if (i % 3 === 0) {
+      const c = Math.round(base * 0.5);
+      store[key]["figma-client1"] = {
+        name:    "Sanchit — Client 1",
+        changes: { created: Math.round(c * 0.3), deleted: Math.round(c * 0.1), edited: Math.round(c * 0.6) },
+        files:   [{ name: "Client Portal", key: "f4" }],
+        ts:      Date.now()
+      };
+    }
+  }
+  localStorage.setItem("dc_v1_" + email, JSON.stringify(store));
+  return email;
+}
+
+// ─── DEEP-LINK from plugin (email in URL hash) ────────────────────────────────
+window.addEventListener("DOMContentLoaded", () => {
+  // ?demo or #demo → seed and auto-login
+  const params = new URLSearchParams(window.location.search);
+  if (params.has("demo") || window.location.hash === "#demo") {
+    const email = seedDemoData();
+    loadDashboard(email);
+    return;
+  }
+
+  const hash = window.location.hash.slice(1);
+  if (hash) {
+    // #public:email → public view
+    if (hash.startsWith("public:")) {
+      const email = decodeURIComponent(hash.slice(7));
+      if (valid(email)) { loadDashboard(email); applyPublicMode(email); }
+      return;
+    }
+    // #email → auto-login
+    const email = decodeURIComponent(hash);
+    if (valid(email)) {
+      emailInput.value  = email;
+      loginBtn.disabled = false;
+      loginBtn.click();
+    }
+  }
+});
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+function todayStr() {
+  return fmtDate(new Date());
+}
+function fmtDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+// Display format: DD-MM-YYYY | HH:MM
+function fmtDisplay(d) {
+  const dd = String(d.getDate()).padStart(2,"0");
+  const mm = String(d.getMonth()+1).padStart(2,"0");
+  const yyyy = d.getFullYear();
+  const hh = String(d.getHours()).padStart(2,"0");
+  const min = String(d.getMinutes()).padStart(2,"0");
+  return `${dd}-${mm}-${yyyy} | ${hh}:${min}`;
+}
+// Display date: DD MMM YY e.g. 20 Mar 26
+function fmtDisplayDate(d) {
+  const dd  = String(d.getDate()).padStart(2,"0");
+  const mon = d.toLocaleDateString("en-GB", { month: "short" });
+  const yy  = String(d.getFullYear()).slice(-2);
+  return `${dd} ${mon} ${yy}`;
+}
+// Display month + year: MMM YY e.g. Mar 26
+function fmtDisplayMonth(d) {
+  const mon = d.toLocaleDateString("en-GB", { month: "short" });
+  const yy  = String(d.getFullYear()).slice(-2);
+  return `${mon} ${yy}`;
+}
+function esc(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function calcStreak(heatmap) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const days  = Object.keys(heatmap).sort().reverse();
+  let streak  = 0;
+  let cur     = new Date(today);
+  for (const d of days) {
+    const cd   = new Date(d + "T00:00:00"); cd.setHours(0,0,0,0);
+    const diff = Math.round((cur - cd) / 86400000);
+    if ((diff === 0 || diff === 1) && heatmap[d] > 0) { streak++; cur = cd; } else break;
+  }
+  return streak;
+}
+</script>
+</body>
+</html>

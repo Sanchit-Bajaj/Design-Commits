@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design Commits — Activity</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:  #0B1A0D;
+  --sf:  #0F2012;
+  --s3:  #1D3320;
+  --b1:  rgba(255,255,255,.06);
+  --ink: #FFFFFF;
+  --i2:  rgba(255,255,255,.55);
+  --i3:  rgba(255,255,255,.30);
+  --ac:  #AAFF00;
+  --abg: rgba(170,255,0,.10);
+  --abr: rgba(170,255,0,.28);
+  --fn:  -apple-system, "Inter", sans-serif;
+  --mn:  "DM Mono", "SF Mono", ui-monospace, monospace;
+  --r:   10px;
+}
+
+html, body {
+  font-family: var(--fn);
+  font-size: 12px;
+  background: var(--bg);
+  color: var(--ink);
+  height: 100%;
+  overflow: hidden;
+}
+
+.widget {
+  padding: 14px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+}
+
+.widget-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.widget-brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+}
+.widget-logo { font-size: 13px; }
+.widget-name { font-size: 11px; font-weight: 600; color: var(--i2); }
+
+.widget-streak {
+  background: var(--abg);
+  border: 1px solid var(--abr);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ac);
+}
+
+.hm-grid {
+  display: grid;
+  grid-template-rows: repeat(7, 1fr);
+  grid-auto-flow: column;
+  gap: 2px;
+  flex: 1;
+}
+.hm-cell {
+  border-radius: 2px;
+  background: var(--s3);
+  aspect-ratio: 1;
+}
+.hm-cell[data-l="1"] { background: rgba(170,255,0,.20); }
+.hm-cell[data-l="2"] { background: rgba(170,255,0,.42); }
+.hm-cell[data-l="3"] { background: rgba(170,255,0,.68); }
+.hm-cell[data-l="4"] { background: var(--ac); box-shadow: 0 0 3px rgba(170,255,0,.5); }
+
+.widget-ft {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.widget-range { font-size: 9px; color: var(--i3); }
+.widget-legend {
+  display: flex; align-items: center; gap: 3px;
+}
+.widget-legend span { font-size: 8px; color: var(--i3); }
+.hl-cell { width: 7px; height: 7px; border-radius: 1px; }
+.hl-cell.l0 { background: var(--s3); }
+.hl-cell.l1 { background: rgba(170,255,0,.20); }
+.hl-cell.l2 { background: rgba(170,255,0,.42); }
+.hl-cell.l3 { background: rgba(170,255,0,.68); }
+.hl-cell.l4 { background: var(--ac); }
+
+/* No data state */
+.no-data {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--i3);
+  font-size: 11px;
+  text-align: center;
+  padding: 16px;
+}
+.no-data-icon { font-size: 24px; }
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script>
+function lsKey(email) { return "dc_v1_" + email; }
+
+function readStore(email) {
+  try { return JSON.parse(localStorage.getItem(lsKey(email)) || "{}"); }
+  catch(e) { return {}; }
+}
+
+function fmtDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+
+function aggregateHeatmap(email) {
+  const store   = readStore(email);
+  const heatmap = {};
+  for (const date in store) {
+    const dayAccs = store[date];
+    let total = 0;
+    for (const accId in dayAccs) {
+      const c = dayAccs[accId].changes || {};
+      total += (c.created || 0) + (c.deleted || 0) + (c.edited || 0);
+    }
+    if (total > 0) heatmap[date] = total;
+  }
+  return heatmap;
+}
+
+function calcStreak(heatmap) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const days  = Object.keys(heatmap).sort().reverse();
+  let streak  = 0, cur = new Date(today);
+  for (const d of days) {
+    const cd   = new Date(d + "T00:00:00"); cd.setHours(0,0,0,0);
+    const diff = Math.round((cur - cd) / 86400000);
+    if ((diff === 0 || diff === 1) && heatmap[d] > 0) { streak++; cur = cd; } else break;
+  }
+  return streak;
+}
+
+function render(email) {
+  const heatmap = aggregateHeatmap(email);
+  const root    = document.getElementById("root");
+
+  if (!Object.keys(heatmap).length) {
+    root.innerHTML = `<div class="no-data"><div class="no-data-icon">✏️</div>No activity yet</div>`;
+    return;
+  }
+
+  // Determine week count based on widget width
+  const WEEKS   = Math.max(8, Math.floor((window.innerWidth - 32) / 9));
+  const today   = new Date(); today.setHours(0,0,0,0);
+  const startDay = new Date(today);
+  startDay.setDate(today.getDate() - today.getDay() - (WEEKS - 1) * 7);
+
+  const scores   = Object.values(heatmap).filter(v => v > 0);
+  const maxScore = scores.length ? Math.max(...scores) : 1;
+
+  const streak   = calcStreak(heatmap);
+  const streakTxt = streak > 1 ? `🔥 ${streak} day streak` : (heatmap[fmtDate(today)] > 0 ? "🔥 1 day streak" : "Active");
+
+  let cells = "";
+  for (let i = 0; i < WEEKS * 7; i++) {
+    const d   = new Date(startDay); d.setDate(startDay.getDate() + i);
+    const key = fmtDate(d);
+    const score = heatmap[key] || 0;
+    const isFuture = d > today;
+    let level = 0;
+    if (!isFuture && score > 0) {
+      const r = score / maxScore;
+      level = r <= .25 ? 1 : r <= .5 ? 2 : r <= .75 ? 3 : 4;
+    }
+    cells += `<div class="hm-cell"${!isFuture ? ` data-l="${level}"` : ""} title="${score > 0 ? key + ": " + score + " changes" : key}"></div>`;
+  }
+
+  const startLabel = startDay.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const endLabel   = today.toLocaleDateString("en-US",   { month: "short", day: "numeric" });
+
+  root.innerHTML = `
+    <div class="widget">
+      <div class="widget-hd">
+        <a class="widget-brand" href="#" target="_blank" rel="noopener">
+          <span class="widget-logo">✏️</span>
+          <span class="widget-name">Design Commits</span>
+        </a>
+        <div class="widget-streak">${streakTxt}</div>
+      </div>
+      <div class="hm-grid">${cells}</div>
+      <div class="widget-ft">
+        <span class="widget-range">${startLabel} – ${endLabel}</span>
+        <div class="widget-legend">
+          <span>Less</span>
+          <div class="hl-cell l0"></div><div class="hl-cell l1"></div>
+          <div class="hl-cell l2"></div><div class="hl-cell l3"></div>
+          <div class="hl-cell l4"></div>
+          <span>More</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  const hash = window.location.hash.slice(1);
+  if (!hash || !hash.includes("@")) {
+    document.getElementById("root").innerHTML =
+      `<div class="no-data"><div class="no-data-icon">✏️</div>Add your email to the URL:<br><code style="color:var(--ac);font-size:10px">#you@company.com</code></div>`;
+    return;
+  }
+  render(decodeURIComponent(hash));
+});
+</script>
+</body>
+</html>

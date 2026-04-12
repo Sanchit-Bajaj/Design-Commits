@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Design Commits</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:   #0B1A0D;
+  --sf:   #0F2012;
+  --s2:   #152918;
+  --s3:   #1D3320;
+  --b1:   rgba(255,255,255,.06);
+  --b2:   rgba(255,255,255,.12);
+  --ink:  #FFFFFF;
+  --i2:   rgba(255,255,255,.55);
+  --i3:   rgba(255,255,255,.30);
+  --ac:   #AAFF00;
+  --ac-d: #0D2200;
+  --abg:  rgba(170,255,0,.10);
+  --abr:  rgba(170,255,0,.28);
+  --gn:   #AAFF00;
+  --gnbg: rgba(170,255,0,.10);
+  --gnbr: rgba(170,255,0,.28);
+  --rd:   #FF5050;
+  --rdbg: rgba(255,80,80,.10);
+  --glow: 0 0 28px rgba(170,255,0,.14);
+  --r:    10px;
+  --rs:   6px;
+  --fn:   -apple-system, "Inter", sans-serif;
+  --mn:   "DM Mono", "SF Mono", ui-monospace, monospace;
+}
+
+html, body {
+  font-family: var(--fn);
+  font-size: 12px;
+  line-height: 1.45;
+  background: var(--bg);
+  color: var(--ink);
+  height: 100%;
+  overflow: hidden;
+}
+
+.screen { display: none; flex-direction: column; height: 100vh; }
+.screen.active { display: flex; }
+
+/* ─── LOADING ────────────────────────────────────────────────────────────── */
+#screen-loading {
+  align-items: center; justify-content: center; gap: 5px; background: var(--bg);
+}
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--i3); animation: pulse 1.2s infinite; }
+.dot:nth-child(2) { animation-delay: .4s; }
+.dot:nth-child(3) { animation-delay: .8s; }
+@keyframes pulse { 0%,100%{opacity:.25} 50%{opacity:1} }
+
+/* ─── AUTH ───────────────────────────────────────────────────────────────── */
+#screen-auth {
+  background: var(--bg);
+  align-items: stretch;
+  justify-content: space-between;
+  padding: 32px 24px 24px;
+}
+.auth-top { display: flex; flex-direction: column; align-items: center; }
+.auth-logo {
+  width: 48px; height: 48px;
+  background: var(--abg);
+  border: 1px solid var(--abr);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center; font-size: 24px;
+  margin-bottom: 14px;
+  box-shadow: var(--glow);
+}
+.auth-title { font-size: 20px; font-weight: 700; color: var(--ink); letter-spacing: -0.04em; }
+.auth-sub   { font-size: 11px; color: var(--i3); margin-top: 4px; text-align: center; }
+.figma-user-pill {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--s2); border: 1px solid var(--b1); border-radius: 20px;
+  padding: 6px 14px 6px 6px; margin-top: 18px;
+}
+.fup-av {
+  width: 26px; height: 26px; border-radius: 50%; background: var(--ac-d);
+  border: 1.5px solid var(--abr); color: var(--ac);
+  font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; overflow: hidden;
+}
+.fup-av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.fup-name  { font-size: 11px; font-weight: 600; color: var(--ink); }
+.fup-badge { font-size: 9px; color: var(--i3); }
+.auth-form { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
+.auth-label { font-size: 10px; font-weight: 600; color: var(--i3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+.auth-input {
+  font-family: var(--fn); font-size: 13px; color: var(--ink);
+  background: var(--s2); border: 1px solid var(--b1); border-radius: var(--rs);
+  padding: 10px 12px; outline: none; transition: border-color .15s, box-shadow .15s; width: 100%;
+}
+.auth-input:focus { border-color: var(--abr); box-shadow: 0 0 0 3px rgba(170,255,0,.08); }
+.auth-input::placeholder { color: var(--i3); }
+.auth-btn {
+  background: var(--ac); color: #0B1A0D; border: none; border-radius: var(--rs);
+  padding: 11px; font-size: 13px; font-weight: 700; font-family: var(--fn);
+  cursor: pointer; width: 100%; transition: opacity .15s, box-shadow .15s;
+  box-shadow: 0 0 20px rgba(170,255,0,.25);
+}
+.auth-btn:hover    { opacity: .9; box-shadow: 0 0 28px rgba(170,255,0,.4); }
+.auth-btn:disabled { opacity: .25; cursor: default; box-shadow: none; }
+.auth-divider {
+  display: flex; align-items: center; gap: 8px; color: var(--i3); font-size: 10px;
+}
+.auth-divider::before, .auth-divider::after { content: ""; flex: 1; height: 1px; background: var(--b1); }
+.figma-sso-btn {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  background: var(--s2); border: 1px solid var(--b1); border-radius: var(--rs);
+  padding: 10px; font-size: 12px; font-weight: 500; font-family: var(--fn);
+  cursor: pointer; color: var(--i2); transition: background .12s, border-color .12s;
+}
+.figma-sso-btn:hover { background: var(--s3); border-color: var(--b2); }
+.auth-footer { font-size: 10px; color: var(--i3); text-align: center; line-height: 1.6; margin-top: 4px; }
+
+/* ─── DASHBOARD ──────────────────────────────────────────────────────────── */
+#screen-dash { background: var(--bg); }
+
+.dash-header {
+  background: var(--sf); border-bottom: 1px solid var(--b1);
+  padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+}
+.dh-left { display: flex; align-items: center; gap: 9px; }
+.dh-av {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--ac-d); border: 1.5px solid var(--abr); color: var(--ac);
+  font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;
+  overflow: hidden; flex-shrink: 0;
+}
+.dh-av img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.dh-name  { font-size: 12px; font-weight: 600; color: var(--ink); }
+.dh-email { font-size: 9px; color: var(--i3); margin-top: 1px; }
+.dh-right { display: flex; align-items: center; gap: 8px; }
+.streak-chip {
+  background: var(--abg); border: 1px solid var(--abr); border-radius: 20px;
+  padding: 3px 10px; font-size: 10px; font-weight: 700; color: var(--ac);
+  letter-spacing: -0.01em;
+}
+
+.dash-body { flex: 1; overflow-y: auto; padding: 10px 12px 24px; }
+.dash-body::-webkit-scrollbar { width: 3px; }
+.dash-body::-webkit-scrollbar-thumb { background: var(--s3); border-radius: 2px; }
+
+/* File bar */
+.file-bar {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--sf); border: 1px solid var(--b1); border-radius: var(--rs);
+  padding: 7px 11px; margin-bottom: 10px;
+}
+.file-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--gn);
+  animation: livepulse 2s infinite; flex-shrink: 0;
+  box-shadow: 0 0 6px rgba(170,255,0,.6);
+}
+@keyframes livepulse { 0%,100%{opacity:.5} 50%{opacity:1} }
+.file-name { font-size: 11px; font-weight: 500; color: var(--ink); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-tag  {
+  font-size: 9px; font-weight: 600; color: var(--ac);
+  background: var(--abg); border: 1px solid var(--abr);
+  padding: 2px 7px; border-radius: 10px; flex-shrink: 0; letter-spacing: 0.03em;
+}
+
+/* Score card — Balance card style */
+.score-card {
+  background: var(--sf); border: 1px solid var(--b1); border-radius: var(--r);
+  padding: 18px 16px 14px; margin-bottom: 10px;
+  position: relative; overflow: hidden;
+}
+.score-card::before {
+  content: ""; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 120%, rgba(170,255,0,.08) 0%, transparent 70%);
+  pointer-events: none;
+}
+.score-label {
+  font-size: 9px; font-weight: 600; color: var(--i3);
+  text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 8px;
+}
+.score-number {
+  font-family: var(--mn); font-size: 54px; font-weight: 700; color: var(--ink);
+  letter-spacing: -0.04em; line-height: 1; margin-bottom: 4px; transition: color .2s;
+}
+.score-number.bump { animation: scorebump .3s cubic-bezier(.34,1.56,.64,1); }
+@keyframes scorebump { 0%{transform:scale(1)} 50%{transform:scale(1.06)} 100%{transform:scale(1)} }
+.score-sub { font-size: 10px; color: var(--i3); margin-bottom: 14px; }
+.score-breakdown {
+  display: grid; grid-template-columns: repeat(2,1fr); gap: 6px;
+  padding-top: 12px; border-top: 1px solid var(--b1);
+}
+.sb-item {
+  text-align: center; background: var(--s2); border-radius: var(--rs); padding: 8px 6px;
+}
+.sb-val  { font-family: var(--mn); font-size: 18px; font-weight: 700; line-height: 1; margin-bottom: 3px; }
+.sb-lbl  { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.sb-item.cr .sb-val, .sb-item.cr .sb-lbl { color: var(--gn); }
+.sb-item.dl .sb-val, .sb-item.dl .sb-lbl { color: var(--rd); }
+
+/* Live indicator */
+.live-row {
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  font-size: 9px; color: var(--gn); margin-top: 12px; letter-spacing: 0.02em;
+}
+.live-dot-sm {
+  width: 5px; height: 5px; border-radius: 50%; background: var(--gn);
+  animation: livepulse 1.5s infinite;
+  box-shadow: 0 0 5px rgba(170,255,0,.7);
+}
+
+/* Heatmap */
+.heatmap-card {
+  background: var(--sf); border: 1px solid var(--b1); border-radius: var(--r);
+  padding: 13px 13px 11px; margin-bottom: 10px;
+}
+.heatmap-hd { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.heatmap-title { font-size: 9px; font-weight: 700; color: var(--i2); text-transform: uppercase; letter-spacing: 0.09em; }
+.heatmap-range { font-size: 9px; color: var(--i3); }
+.heatmap-grid {
+  display: grid; grid-template-rows: repeat(7, 10px); grid-auto-flow: column; gap: 2px;
+}
+.hm-cell { width: 10px; height: 10px; border-radius: 2px; background: var(--s3); }
+.hm-cell[data-l="1"] { background: rgba(170,255,0,.20); }
+.hm-cell[data-l="2"] { background: rgba(170,255,0,.42); }
+.hm-cell[data-l="3"] { background: rgba(170,255,0,.68); }
+.hm-cell[data-l="4"] { background: var(--ac); box-shadow: 0 0 4px rgba(170,255,0,.5); }
+.heatmap-legend { display: flex; align-items: center; gap: 4px; margin-top: 9px; justify-content: flex-end; }
+.heatmap-legend span { font-size: 8px; color: var(--i3); }
+.hl-cell { width: 8px; height: 8px; border-radius: 1px; }
+.hl-cell.l0 { background: var(--s3); }
+.hl-cell.l1 { background: rgba(170,255,0,.20); }
+.hl-cell.l2 { background: rgba(170,255,0,.42); }
+.hl-cell.l3 { background: rgba(170,255,0,.68); }
+.hl-cell.l4 { background: var(--ac); }
+
+/* Web dashboard link button */
+.web-dash-btn {
+  display: block; width: 100%;
+  background: none; border: 1px solid var(--b1); border-radius: var(--rs);
+  padding: 10px; font-size: 11px; font-weight: 600; font-family: var(--fn);
+  color: var(--i2); cursor: pointer; text-align: center;
+  transition: border-color .15s, color .15s;
+}
+.web-dash-btn:hover { border-color: var(--abr); color: var(--ac); }
+
+/* ─── MINI BAR ───────────────────────────────────────────────────────────── */
+#mini-bar {
+  display: none; align-items: center; justify-content: space-between;
+  height: 44px; padding: 0 13px;
+  background: var(--sf); border-bottom: 1px solid var(--b1);
+}
+#mini-bar.active { display: flex; }
+.mini-left { display: flex; align-items: center; gap: 8px; }
+.mini-logo { font-size: 15px; }
+.mini-name { font-size: 11px; font-weight: 600; color: var(--ink); }
+.mini-score {
+  font-family: var(--mn); font-size: 11px; font-weight: 700; color: var(--ac);
+  background: var(--abg); border: 1px solid var(--abr);
+  border-radius: 10px; padding: 2px 9px;
+}
+.mini-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 14px; color: var(--i3); padding: 5px;
+  border-radius: 5px; line-height: 1; transition: background .12s, color .12s;
+}
+.mini-btn:hover { background: var(--s2); color: var(--ac); }
+
+/* ─── ACCOUNT BREAKDOWN (multi-account) ─────────────────────────────── */
+.acc-breakdown {
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--b1);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.acc-bd-label {
+  font-size: 8px; font-weight: 600; color: var(--i3);
+  text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 3px;
+}
+.acc-row {
+  display: flex; align-items: center; gap: 7px;
+  padding: 3px 0;
+}
+.acc-dot {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--i3); flex-shrink: 0;
+}
+.acc-dot.current {
+  background: var(--ac);
+  box-shadow: 0 0 5px rgba(170,255,0,.7);
+  animation: livepulse 1.5s infinite;
+}
+.acc-name {
+  font-size: 10px; color: var(--i2); flex: 1;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.acc-name .acc-you { font-size: 8px; color: var(--ac); margin-left: 4px; }
+.acc-total {
+  font-family: var(--mn); font-size: 10px; font-weight: 700; color: var(--ink);
+  flex-shrink: 0;
+}
+
+/* ─── LEADERBOARD MINI CARD ──────────────────────────────────────────── */
+.lb-mini {
+  background: var(--sf); border: 1px solid var(--b1); border-radius: var(--r);
+  padding: 13px 13px 10px; margin-bottom: 10px;
+}
+.lb-mini-hd {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
+}
+.lb-mini-title { font-size: 9px; font-weight: 700; color: var(--i2); text-transform: uppercase; letter-spacing: 0.09em; }
+.lb-tier-chip {
+  font-size: 9px; font-weight: 700; border-radius: 10px; padding: 2px 8px;
+}
+.lb-tier-chip.top     { background: rgba(255,215,0,.12); color: #FFD700; border: 1px solid rgba(255,215,0,.28); }
+.lb-tier-chip.active  { background: var(--abg); color: var(--ac); border: 1px solid var(--abr); }
+.lb-tier-chip.growing { background: rgba(100,180,255,.10); color: #64B4FF; border: 1px solid rgba(100,180,255,.25); }
+.lb-mini-list { display: flex; flex-direction: column; gap: 1px; }
+.lb-row {
+  display: flex; align-items: center; gap: 7px;
+  padding: 4px 7px; border-radius: var(--rs);
+}
+.lb-row.lb-you { background: var(--abg); }
+.lb-row.lb-sep { border-top: 1px solid var(--b1); margin-top: 3px; padding-top: 6px; }
+.lb-rank  { font-family: var(--mn); font-size: 9px; color: var(--i3); width: 14px; flex-shrink: 0; text-align: right; }
+.lb-name  { font-size: 10px; color: var(--i2); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lb-name .lb-you-tag { font-size: 8px; color: var(--ac); margin-left: 4px; }
+.lb-pts   { font-family: var(--mn); font-size: 10px; font-weight: 700; color: var(--ink); flex-shrink: 0; }
+.lb-mini-more {
+  display: block; width: 100%; text-align: center;
+  margin-top: 9px; padding-top: 9px; border-top: 1px solid var(--b1);
+  background: none; border: none; cursor: pointer;
+  font-size: 10px; color: var(--i3); font-family: var(--fn);
+  transition: color .15s;
+}
+.lb-mini-more:hover { color: var(--ac); }
+
+/* Toast */
+.toast {
+  position: fixed; bottom: 12px; left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  background: var(--s3); color: var(--ink); border: 1px solid var(--b2);
+  padding: 7px 16px; border-radius: 20px; font-size: 11px; font-weight: 500;
+  opacity: 0; transition: all .2s; z-index: 1000; white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- MINI BAR (shown when minimized) -->
+<div id="mini-bar">
+  <div class="mini-left">
+    <span class="mini-logo">✏️</span>
+    <span class="mini-name">Design Commits</span>
+    <span class="mini-score" id="mini-score">0</span>
+  </div>
+  <button class="mini-btn" onclick="restore()" title="Expand">⤢</button>
+</div>
+
+<!-- LOADING -->
+<div id="screen-loading" class="screen active">
+  <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+</div>
+
+<!-- AUTH -->
+<div id="screen-auth" class="screen">
+  <div class="auth-top">
+    <div class="auth-logo">✏️</div>
+    <div class="auth-title">Design Commits</div>
+    <div class="auth-sub">Track your daily Figma progress</div>
+    <div class="figma-user-pill" id="figma-pill" style="display:none">
+      <div class="fup-av" id="auth-av"></div>
+      <div>
+        <div class="fup-name" id="auth-figma-name"></div>
+        <div class="fup-badge">Detected from Figma</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-form">
+    <div>
+      <div class="auth-label">Work Email</div>
+      <input class="auth-input" type="email" id="auth-email" placeholder="you@company.com" autocomplete="email">
+    </div>
+    <div id="name-field" style="display:none">
+      <div class="auth-label">Display Name</div>
+      <input class="auth-input" type="text" id="auth-name" placeholder="Your name" autocomplete="name">
+    </div>
+    <button class="auth-btn" id="auth-submit-btn" disabled>Continue →</button>
+    <div class="auth-divider">or</div>
+    <button class="figma-sso-btn" id="figma-continue-btn">
+      <span>🎨</span> Continue with Figma Account
+    </button>
+  </div>
+
+  <div class="auth-footer">
+    Your data is stored locally in your Figma account.<br>
+    No passwords. No tracking. Just your work.
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="screen-dash" class="screen">
+
+  <div class="dash-header">
+    <div class="dh-left">
+      <div class="dh-av" id="dh-av"></div>
+      <div>
+        <div class="dh-name"  id="dh-name">Designer</div>
+        <div class="dh-email" id="dh-email"></div>
+      </div>
+    </div>
+    <div class="dh-right">
+      <div class="streak-chip" id="streak-chip">Day 1</div>
+      <button onclick="minimize()" title="Minimise"
+        style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--i3);padding:0;line-height:1">⤡</button>
+      <button onclick="signOut()" title="Sign out"
+        style="background:none;border:none;cursor:pointer;font-size:14px;color:var(--i3);padding:0">↩</button>
+    </div>
+  </div>
+
+  <div class="dash-body">
+
+    <!-- ACTIVITY HEATMAP — top -->
+    <div class="heatmap-card">
+      <div class="heatmap-hd">
+        <div class="heatmap-title">Activity</div>
+        <div class="heatmap-range" id="heatmap-range"></div>
+      </div>
+      <div class="heatmap-grid" id="heatmap-grid"></div>
+      <div class="heatmap-legend">
+        <span>Less</span>
+        <div class="hl-cell l0"></div><div class="hl-cell l1"></div>
+        <div class="hl-cell l2"></div><div class="hl-cell l3"></div>
+        <div class="hl-cell l4"></div>
+        <span>More</span>
+      </div>
+    </div>
+
+    <!-- TODAY'S SCORE -->
+    <div class="score-card">
+      <div class="score-label">Today's Design Score</div>
+      <div class="score-number" id="score-number">0</div>
+      <div class="score-sub">nodes changed today</div>
+      <div class="score-breakdown">
+        <div class="sb-item cr">
+          <div class="sb-val" id="score-created">0</div>
+          <div class="sb-lbl">Added</div>
+        </div>
+        <div class="sb-item dl">
+          <div class="sb-val" id="score-deleted">0</div>
+          <div class="sb-lbl">Removed</div>
+        </div>
+      </div>
+      <!-- Per-account breakdown — only rendered when >1 account has data today -->
+      <div class="acc-breakdown" id="acc-breakdown" style="display:none"></div>
+      <div class="live-row">
+        <div class="live-dot-sm"></div>
+        Auto-tracking · updates every 15s
+      </div>
+    </div>
+
+    <!-- LEADERBOARD MINI CARD -->
+    <div class="lb-mini" id="lb-mini" style="display:none">
+      <div class="lb-mini-hd">
+        <div class="lb-mini-title" id="lb-month-label">Month Board</div>
+        <div class="lb-tier-chip active" id="lb-tier-chip">⚡ Active</div>
+      </div>
+      <div class="lb-mini-list" id="lb-mini-list"></div>
+      <button class="lb-mini-more" onclick="openWebDashboard()">See full leaderboard →</button>
+    </div>
+
+    <!-- Open web dashboard -->
+    <button class="web-dash-btn" onclick="openWebDashboard()" id="web-dash-btn">
+      Open full dashboard →
+    </button>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let state = {
+  user:           null,
+  figmaUser:      null,
+  figmaUserId:    null,          // current Figma account ID
+  figmaUserName:  "Figma Account",
+  todayChanges:   { created: 0, deleted: 0, edited: 0 },
+  total:          0,             // this account's today total
+  aggregateTotal: 0,             // all accounts' combined today total
+  heatmap:        {},            // date → aggregated score (all accounts)
+  fileMap:        {},            // date → [{ name, key }] deduplicated
+  accountMap:     {},            // date → { accId → { name, total, files } }
+  sessionStart:   Date.now(),
+  fileName:       "Untitled",
+  fileKey:        null
+};
+
+// ─── SCREEN ───────────────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function setAvatar(el, user, figmaUser) {
+  if (!el) return;
+  if (figmaUser && figmaUser.photoUrl) {
+    el.innerHTML = `<img src="${figmaUser.photoUrl}" alt="">`;
+  } else {
+    const name = (user && user.name) || (figmaUser && figmaUser.name) || "D";
+    el.textContent = name.trim().slice(0, 1).toUpperCase();
+  }
+}
+
+function renderHeader() {
+  const { user, figmaUser, heatmap, fileName } = state;
+  const name  = (user && user.name)  || (figmaUser && figmaUser.name)  || "Designer";
+  const email = (user && user.email) || "";
+  setAvatar(document.getElementById("dh-av"), user, figmaUser);
+  document.getElementById("dh-name").textContent  = name;
+  document.getElementById("dh-email").textContent = email;
+  const fnEl = document.getElementById("file-name");
+  if (fnEl) fnEl.textContent = fileName || "Untitled";
+
+  // Streak: consecutive days with activity
+  const today = todayStr();
+  const days  = Object.keys(heatmap).sort().reverse();
+  let streak  = 0;
+  let cur     = new Date(); cur.setHours(0,0,0,0);
+  for (const d of days) {
+    const cd = new Date(d + "T00:00:00"); cd.setHours(0,0,0,0);
+    const diff = Math.round((cur - cd) / 86400000);
+    if ((diff === 0 || diff === 1) && heatmap[d] > 0) { streak++; cur = cd; } else break;
+  }
+  document.getElementById("streak-chip").textContent =
+    streak > 1 ? `🔥 ${streak} days` : (heatmap[today] > 0 ? "🔥 1 day" : "Day 1");
+}
+
+function renderScore(animate) {
+  const displayTotal = state.aggregateTotal || state.total || 0;
+  const el   = document.getElementById("score-number");
+  const prev = parseInt(el.textContent) || 0;
+  el.textContent = displayTotal;
+  document.getElementById("score-created").textContent = state.todayChanges.created || 0;
+  document.getElementById("score-deleted").textContent = state.todayChanges.deleted || 0;
+  if (animate && displayTotal !== prev) {
+    el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump");
+  }
+
+  // Per-account breakdown — only shown when more than one account has data today
+  const today      = todayStr();
+  const todayAccs  = (state.accountMap && state.accountMap[today]) || {};
+  const accIds     = Object.keys(todayAccs);
+  const bd         = document.getElementById("acc-breakdown");
+  if (!bd) return;
+
+  if (accIds.length > 1) {
+    bd.style.display = "";
+    bd.innerHTML = `<div class="acc-bd-label">Across accounts</div>`;
+    // Sort by contribution descending
+    accIds.sort((a, b) => todayAccs[b].total - todayAccs[a].total);
+    accIds.forEach(accId => {
+      const acc       = todayAccs[accId];
+      const isCurrent = accId === state.figmaUserId;
+      const row       = document.createElement("div");
+      row.className   = "acc-row";
+      row.innerHTML   =
+        `<div class="acc-dot${isCurrent ? " current" : ""}"></div>` +
+        `<span class="acc-name">${esc(acc.name || accId)}${isCurrent ? `<span class="acc-you">you</span>` : ""}</span>` +
+        `<span class="acc-total">${acc.total}</span>`;
+      bd.appendChild(row);
+    });
+  } else {
+    bd.style.display = "none";
+  }
+}
+
+function renderHeatmap() {
+  const grid    = document.getElementById("heatmap-grid");
+  const rangeEl = document.getElementById("heatmap-range");
+  if (!grid) return;
+
+  const WEEKS   = 16;
+  const today   = new Date(); today.setHours(0,0,0,0);
+  const startDay = new Date(today);
+  startDay.setDate(today.getDate() - today.getDay() - (WEEKS - 1) * 7);
+
+  const scores  = Object.values(state.heatmap).filter(v => v > 0);
+  const maxScore = scores.length ? Math.max(...scores) : 1;
+
+  grid.innerHTML = "";
+  for (let i = 0; i < WEEKS * 7; i++) {
+    const d   = new Date(startDay);
+    d.setDate(startDay.getDate() + i);
+    const key = fmtDate(d);
+    const score    = state.heatmap[key] || 0;
+    const isFuture = d > today;
+    let level = 0;
+    if (!isFuture && score > 0) {
+      const r = score / maxScore;
+      level = r <= .25 ? 1 : r <= .5 ? 2 : r <= .75 ? 3 : 4;
+    }
+    const el = document.createElement("div");
+    el.className = "hm-cell";
+    if (!isFuture) el.setAttribute("data-l", level);
+    el.title = score > 0 ? `${key}: ${score} changes` : key;
+    grid.appendChild(el);
+  }
+
+  const startLabel = startDay.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const endLabel   = today.toLocaleDateString("en-US",   { month: "short", day: "numeric" });
+  if (rangeEl) rangeEl.textContent = `${startLabel} – ${endLabel}`;
+}
+
+// ─── WEB DASHBOARD ──────────────────────────────────────────────────────────
+function openWebDashboard() {
+  // In the Figma plugin, open the web dashboard in a new browser tab
+  const email = state.user ? state.user.email : "";
+  const url   = "http://localhost:3034/dashboard.html" + (email ? `#${encodeURIComponent(email)}` : "");
+  window.open(url, "_blank");
+}
+
+// ─── LEADERBOARD ─────────────────────────────────────────────────────────────
+const LB_PEERS = [
+  { name: "Neha R.",   score: 2840 },
+  { name: "Tariq M.",  score: 2650 },
+  { name: "Ines W.",   score: 2100 },
+  { name: "Julio S.",  score: 1420 },
+  { name: "Aiko T.",   score: 1280 },
+  { name: "Dev P.",    score: 1050 },
+  { name: "Sara F.",   score:  890 },
+  { name: "Kobe J.",   score:  720 },
+  { name: "Mia L.",    score:  560 },
+  { name: "Reza K.",   score:  380 },
+  { name: "Zara B.",   score:  210 }
+];
+
+function calcMonthScore(heatmap) {
+  const now    = new Date();
+  const prefix = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
+  const monthEntries = Object.entries(heatmap).filter(([d]) => d.startsWith(prefix));
+  const activeDays   = monthEntries.filter(([,v]) => v > 0).length;
+  const monthTotal   = monthEntries.reduce((s,[,v]) => s+v, 0);
+  const streak       = calcStreak(state.heatmap);
+  const volBonus     = Math.min(90, Math.round((monthTotal / 2000) * 90));
+  return (activeDays * 10) + (streak * 5) + volBonus;
+}
+
+function calcStreak(heatmap) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const days  = Object.keys(heatmap).sort().reverse();
+  let streak  = 0, cur = new Date(today);
+  for (const d of days) {
+    const cd   = new Date(d + "T00:00:00"); cd.setHours(0,0,0,0);
+    const diff = Math.round((cur - cd) / 86400000);
+    if ((diff === 0 || diff === 1) && heatmap[d] > 0) { streak++; cur = cd; } else break;
+  }
+  return streak;
+}
+
+function renderLeaderboardMini() {
+  const card = document.getElementById("lb-mini");
+  if (!card || !state.user) return;
+
+  const month = new Date().toLocaleString("en-US", { month: "long" });
+  document.getElementById("lb-month-label").textContent = month + " Board";
+
+  const userScore = calcMonthScore(state.heatmap);
+  const userName  = state.user.name || (state.figmaUser && state.figmaUser.name) || "You";
+
+  // Merge peers + user and sort descending
+  const all = [
+    ...LB_PEERS.map(p => ({ name: p.name, score: p.score, isUser: false })),
+    { name: userName, score: userScore, isUser: true }
+  ].sort((a, b) => b.score - a.score);
+
+  const n          = all.length;
+  const topCut     = Math.ceil(n * 0.25);   // top 25%
+  const activeCut  = Math.ceil(n * 0.75);   // top 75%
+  const userIdx    = all.findIndex(p => p.isUser);
+
+  let tier, tierClass;
+  if      (userIdx < topCut)   { tier = "🏆 Top Tier"; tierClass = "top"; }
+  else if (userIdx < activeCut){ tier = "⚡ Active";    tierClass = "active"; }
+  else                          { tier = "🌱 Growing";  tierClass = "growing"; }
+
+  const chip = document.getElementById("lb-tier-chip");
+  chip.textContent = tier;
+  chip.className   = `lb-tier-chip ${tierClass}`;
+
+  // Show top 3 rows + user's row if outside top 3
+  const listEl   = document.getElementById("lb-mini-list");
+  listEl.innerHTML = "";
+  const TOP_N = 3;
+
+  all.slice(0, TOP_N).forEach((p, i) => {
+    const row = document.createElement("div");
+    row.className = "lb-row" + (p.isUser ? " lb-you" : "");
+    row.innerHTML =
+      `<span class="lb-rank">#${i+1}</span>` +
+      `<span class="lb-name">${esc(p.name)}${p.isUser ? `<span class="lb-you-tag">you</span>` : ""}</span>` +
+      `<span class="lb-pts">${p.score}</span>`;
+    listEl.appendChild(row);
+  });
+
+  if (userIdx >= TOP_N) {
+    const row = document.createElement("div");
+    row.className = "lb-row lb-you lb-sep";
+    row.innerHTML =
+      `<span class="lb-rank">#${userIdx+1}</span>` +
+      `<span class="lb-name">${esc(userName)}<span class="lb-you-tag">you</span></span>` +
+      `<span class="lb-pts">${userScore}</span>`;
+    listEl.appendChild(row);
+  }
+
+  card.style.display = "";
+}
+
+// ─── AUTH ─────────────────────────────────────────────────────────────────────
+function setupAuthScreen(figmaUser) {
+  const pill     = document.getElementById("figma-pill");
+  const avEl     = document.getElementById("auth-av");
+  const nameEl   = document.getElementById("auth-figma-name");
+  const nameField = document.getElementById("name-field");
+
+  if (figmaUser) {
+    pill.style.display = "flex";
+    if (figmaUser.photoUrl) avEl.innerHTML = `<img src="${figmaUser.photoUrl}" alt="">`;
+    else avEl.textContent = (figmaUser.name || "D").slice(0, 1).toUpperCase();
+    nameEl.textContent = figmaUser.name || "Figma User";
+    nameField.style.display = "none";
+  } else {
+    pill.style.display = "none";
+    nameField.style.display = "block";
+  }
+
+  const emailInput = document.getElementById("auth-email");
+  const submitBtn  = document.getElementById("auth-submit-btn");
+  const valid = v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+
+  // Use onclick to replace any previously registered handler (avoids duplicate listeners)
+  emailInput.oninput   = () => { submitBtn.disabled = !valid(emailInput.value); };
+  emailInput.onkeydown = e => { if (e.key === "Enter" && !submitBtn.disabled) submitBtn.click(); };
+
+  submitBtn.onclick = () => {
+    const email = emailInput.value.trim();
+    if (!valid(email)) return;
+    const name = figmaUser ? figmaUser.name : (document.getElementById("auth-name").value.trim() || "Designer");
+    parent.postMessage({ pluginMessage: { type: "AUTH_SUBMIT", email, name } }, "*");
+  };
+
+  document.getElementById("figma-continue-btn").onclick = () => {
+    if (!figmaUser) { alert("No Figma account detected. Please enter your email."); return; }
+    const email = figmaUser.name.toLowerCase().replace(/\s+/g,"") + "@figma.local";
+    parent.postMessage({ pluginMessage: { type: "AUTH_SUBMIT", email, name: figmaUser.name } }, "*");
+  };
+}
+
+// ─── MINIMIZE / RESTORE ──────────────────────────────────────────────────────
+function minimize() {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById("mini-bar").classList.add("active");
+  document.getElementById("mini-score").textContent = state.total || 0;
+  parent.postMessage({ pluginMessage: { type: "MINIMIZE" } }, "*");
+}
+
+function restore() {
+  document.getElementById("mini-bar").classList.remove("active");
+  // Re-show the dashboard
+  document.getElementById("screen-dash").classList.add("active");
+  parent.postMessage({ pluginMessage: { type: "RESTORE" } }, "*");
+}
+
+// ─── SIGN OUT ─────────────────────────────────────────────────────────────────
+function signOut() {
+  parent.postMessage({ pluginMessage: { type: "SIGN_OUT" } }, "*");
+}
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+function todayStr() {
+  const d = new Date();
+  return fmtDate(d);
+}
+function fmtDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
+function esc(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// ─── MULTI-ACCOUNT STORE (localStorage) ──────────────────────────────────────
+// Each Figma account writes its own slice under the user's email key.
+// The dashboard always reads the aggregate across all accounts.
+
+function lsKey(email) {
+  return "dc_v1_" + email;
+}
+
+function readStore(email) {
+  try { return JSON.parse(localStorage.getItem(lsKey(email)) || "{}"); }
+  catch(e) { return {}; }
+}
+
+function writeStore(email, data) {
+  try { localStorage.setItem(lsKey(email), JSON.stringify(data)); }
+  catch(e) {} // If localStorage is unavailable, fail silently
+}
+
+// Write today's full change breakdown for the current Figma account
+function mergeAccountDay(email, accId, accName, date, changes, files) {
+  const store = readStore(email);
+  if (!store[date]) store[date] = {};
+  store[date][accId] = {
+    name:    accName,
+    changes: Object.assign({}, changes),
+    files:   files || [],
+    ts:      Date.now()
+  };
+  writeStore(email, store);
+}
+
+// Backfill historical days for this account (only fills blanks, never overwrites)
+function mergeHistoricalDays(email, accId, accName, heatmap, fileMap, today) {
+  const store = readStore(email);
+  let changed = false;
+  for (const date in heatmap) {
+    if (date === today) continue;
+    if (!store[date]) store[date] = {};
+    if (!store[date][accId]) {
+      // Only total is available for historical days — store it as edited
+      store[date][accId] = {
+        name:    accName,
+        changes: { created: 0, deleted: 0, edited: heatmap[date] },
+        files:   (fileMap && fileMap[date]) || [],
+        ts:      null
+      };
+      changed = true;
+    }
+  }
+  if (changed) writeStore(email, store);
+}
+
+// Sum all accounts per day → heatmap + fileMap + accountMap
+function aggregateStore(email) {
+  const store      = readStore(email);
+  const heatmap    = {};
+  const fileMap    = {};
+  const accountMap = {};
+
+  for (const date in store) {
+    const dayAccounts = store[date];
+    let   dayTotal    = 0;
+    let   allFiles    = [];
+    accountMap[date]  = {};
+
+    for (const accId in dayAccounts) {
+      const acc = dayAccounts[accId];
+      const c   = acc.changes || {};
+      const tot = (c.created || 0) + (c.deleted || 0) + (c.edited || 0);
+      dayTotal += tot;
+      accountMap[date][accId] = { name: acc.name || accId, total: tot, files: acc.files || [] };
+      allFiles = allFiles.concat(acc.files || []);
+    }
+
+    if (dayTotal > 0) heatmap[date] = dayTotal;
+
+    // Deduplicate files by key
+    const seen = {};
+    fileMap[date] = allFiles.filter(f => {
+      if (seen[f.key]) return false;
+      seen[f.key] = true;
+      return true;
+    });
+  }
+
+  return { heatmap, fileMap, accountMap };
+}
+
+// Sum today's total across all accounts from accountMap
+function aggregateTodayTotal(accountMap) {
+  const today    = todayStr();
+  const todayAcc = (accountMap && accountMap[today]) || {};
+  return Object.values(todayAcc).reduce((s, a) => s + a.total, 0);
+}
+
+// ─── MESSAGE HANDLER ──────────────────────────────────────────────────────────
+window.onmessage = (event) => {
+  const msg = event.data.pluginMessage;
+  if (!msg) return;
+
+  if (msg.type === "INIT") {
+    state.user          = msg.user;
+    state.figmaUser     = msg.figmaUser;
+    state.figmaUserId   = (msg.figmaUser && msg.figmaUser.id)   || "unknown";
+    state.figmaUserName = (msg.figmaUser && msg.figmaUser.name) || "Figma Account";
+    state.todayChanges  = msg.todayChanges || { created: 0, deleted: 0, edited: 0 };
+    state.total         = msg.total || 0;
+    state.sessionStart  = msg.sessionStart;
+    state.fileName      = msg.fileName || "Untitled";
+    state.fileKey       = msg.fileKey  || null;
+
+    if (msg.user) {
+      const today      = todayStr();
+      const email      = msg.user.email;
+      const todayFiles = (msg.fileMap && msg.fileMap[today]) ||
+                         (state.fileName ? [{ name: state.fileName, key: state.fileKey }] : []);
+
+      // Write today's slice for this account, then backfill history
+      mergeAccountDay(email, state.figmaUserId, state.figmaUserName, today, state.todayChanges, todayFiles);
+      mergeHistoricalDays(email, state.figmaUserId, state.figmaUserName, msg.heatmap || {}, msg.fileMap || {}, today);
+
+      // Read aggregate across ALL accounts from localStorage
+      const agg        = aggregateStore(email);
+      state.heatmap    = agg.heatmap;
+      state.fileMap    = agg.fileMap;
+      state.accountMap = agg.accountMap;
+      state.aggregateTotal = aggregateTodayTotal(agg.accountMap);
+    } else {
+      // Not logged in — fall back to this account's raw data
+      state.heatmap        = msg.heatmap || {};
+      state.fileMap        = msg.fileMap  || {};
+      state.accountMap     = {};
+      state.aggregateTotal = state.total;
+    }
+
+    if (!msg.user) {
+      setupAuthScreen(msg.figmaUser);
+      showScreen("screen-auth");
+    } else {
+      renderHeader();
+      renderScore(false);
+      renderHeatmap();
+      renderLeaderboardMini();
+      showScreen("screen-dash");
+    }
+  }
+
+  if (msg.type === "CHANGES_UPDATE") {
+    state.todayChanges = msg.todayChanges || state.todayChanges;
+    state.total        = msg.total || 0;
+
+    if (state.user) {
+      const today      = todayStr();
+      const email      = state.user.email;
+      const todayFiles = (state.fileMap && state.fileMap[today]) ||
+                         (state.fileName ? [{ name: state.fileName, key: state.fileKey }] : []);
+
+      // Refresh this account's today slice, then re-aggregate
+      mergeAccountDay(email, state.figmaUserId, state.figmaUserName, today, state.todayChanges, todayFiles);
+      const agg        = aggregateStore(email);
+      state.heatmap    = agg.heatmap;
+      state.fileMap    = agg.fileMap;
+      state.accountMap = agg.accountMap;
+      state.aggregateTotal = aggregateTodayTotal(agg.accountMap);
+    } else {
+      state.heatmap[todayStr()] = state.total;
+      state.aggregateTotal = state.total;
+    }
+
+    const miniScore = document.getElementById("mini-score");
+    if (miniScore) miniScore.textContent = state.aggregateTotal;
+    renderScore(true);
+    renderHeatmap();
+    renderHeader();
+    renderLeaderboardMini();
+  }
+
+  if (msg.type === "SIGNED_OUT") {
+    state.user = null;
+    setupAuthScreen(state.figmaUser);
+    showScreen("screen-auth");
+  }
+};
+
+// ─── BOOT ─────────────────────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+  parent.postMessage({ pluginMessage: { type: "REQUEST_INIT" } }, "*");
+});
+</script>
+</body>
+</html>
