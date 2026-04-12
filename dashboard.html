@@ -900,13 +900,6 @@ emailInput.onkeydown = e => { if (e.key === "Enter" && !loginBtn.disabled) login
 loginBtn.onclick = () => {
   const email = emailInput.value.trim().toLowerCase();
   if (!valid(email)) return;
-  const store = readStore(email);
-  if (Object.keys(store).length === 0) {
-    const err = document.getElementById("login-error");
-    err.textContent = `No data found for ${email}. Open the Figma plugin first.`;
-    err.classList.add("show");
-    return;
-  }
   loadDashboard(email);
 };
 
@@ -923,27 +916,42 @@ function signOut() {
 
 // ─── SYNC STATUS ──────────────────────────────────────────────────────────────
 function updateSyncBar(email) {
-  const bar = document.getElementById("sync-bar");
-  const dot = document.getElementById("sync-dot");
-  const msg = document.getElementById("sync-msg");
+  const bar   = document.getElementById("sync-bar");
+  const dot   = document.getElementById("sync-dot");
+  const msg   = document.getElementById("sync-msg");
+  const btn   = document.getElementById("sync-btn");
   bar.classList.remove("hidden");
 
-  const ts = localStorage.getItem(`dc_sync_ts_${email}`);
-  if (!ts) {
-    dot.className = "sync-dot stale";
-    msg.innerHTML = `Never synced — <strong>open from the Figma plugin</strong> to load your data`;
+  const ts        = localStorage.getItem(`dc_sync_ts_${email}`);
+  const hasData   = Object.keys(readStore(email)).length > 0;
+
+  if (!ts || !hasData) {
+    dot.className      = "sync-dot stale";
+    bar.style.background = "rgba(255,184,0,.06)";
+    bar.style.borderBottomColor = "rgba(255,184,0,.15)";
+    msg.innerHTML = `
+      <strong style="color:#FFB800">No data yet</strong>
+      &nbsp;—&nbsp;
+      Go to <strong>Figma → Design Commits plugin → "Open full dashboard →"</strong>
+      to sync your activity here
+    `;
+    btn.style.display = "none";
     return;
   }
+
+  bar.style.background = "";
+  bar.style.borderBottomColor = "";
+  btn.style.display = "";
 
   const diff  = Date.now() - parseInt(ts);
   const mins  = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days  = Math.floor(diff / 86400000);
   const ago   = days > 0 ? `${days}d ago` : hours > 0 ? `${hours}h ago` : mins > 0 ? `${mins}m ago` : "just now";
-  const fresh = diff < 3600000; // < 1 hour = fresh
+  const fresh = diff < 3600000;
 
-  dot.className = `sync-dot ${fresh ? "fresh" : "stale"}`;
-  msg.textContent = `Last synced ${ago} from Figma plugin`;
+  dot.className    = `sync-dot ${fresh ? "fresh" : "stale"}`;
+  msg.textContent  = `Last synced ${ago} from Figma plugin`;
 }
 
 function refreshData() {

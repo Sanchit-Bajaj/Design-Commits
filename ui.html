@@ -766,7 +766,13 @@ function setupAuthScreen(figmaUser) {
 
   document.getElementById("figma-continue-btn").onclick = () => {
     if (!figmaUser) { alert("No Figma account detected. Please enter your email."); return; }
-    const email = figmaUser.name.toLowerCase().replace(/\s+/g,"") + "@figma.local";
+    const email = emailInput.value.trim();
+    if (!valid(email)) {
+      emailInput.focus();
+      emailInput.style.borderColor = "var(--rd)";
+      setTimeout(() => emailInput.style.borderColor = "", 1500);
+      return;
+    }
     parent.postMessage({ pluginMessage: { type: "AUTH_SUBMIT", email, name: figmaUser.name } }, "*");
   };
 }
