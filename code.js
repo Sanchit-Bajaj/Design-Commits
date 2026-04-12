@@ -49,7 +49,7 @@ figma.loadAllPagesAsync().then(() => {
               });
             }
           } catch (e) {}
-        }, 15000); // batch UI updates every 15s to avoid distraction
+        }, 2000); // batch UI updates every 2s
       } catch (e) {}
     });
   } catch (e) {
